@@ -45,6 +45,9 @@
     flex-wrap: wrap;
     gap: 10px;
   }
+  @media (max-width: 500px) {
+    .toolbar { flex-direction: column; align-items: flex-start; }
+  }
   .toolbar-left {
     font-family: 'DM Mono', monospace;
     font-size: 0.68rem;
@@ -328,21 +331,6 @@
         </div>
       </a>
 
-      <!-- スネーク -->
-      <a href="games/snake.html" class="pb-card pb-fadein pb-fadein-delay-4">
-        <div class="pb-card-thumb" style="background:linear-gradient(135deg,#f0fdf4,#f7fef4);">
-          <span style="font-size:2.5rem;">🐍</span>
-        </div>
-        <div class="pb-card-body">
-          <div class="pb-card-title">スネーク</div>
-          <div class="pb-card-desc">リンゴを食べて伸びるヘビを操作。壁と自分に当たったら終了！</div>
-          <div class="pb-card-tags">
-            <span class="pb-tag">アクション</span>
-            <span class="pb-tag">1人</span>
-            <span class="pb-tag">記録</span>
-          </div>
-        </div>
-      </a>
 
     </div>
 
@@ -421,15 +409,6 @@
         <span class="pb-list-arrow">→</span>
       </a>
 
-      <a href="games/snake.html" class="pb-list-row pb-fadein pb-fadein-delay-4">
-        <div class="pb-list-icon" style="background:linear-gradient(135deg,#f0fdf4,#f7fef4);">🐍</div>
-        <div class="pb-list-info">
-          <div class="pb-list-title">スネーク</div>
-          <div class="pb-list-desc">リンゴを食べて伸びるヘビを操作。壁と自分に当たったら終了！</div>
-        </div>
-        <div style="display:flex;gap:4px;flex-shrink:0;"><span class="pb-tag">アクション</span></div>
-        <span class="pb-list-arrow">→</span>
-      </a>
 
     </div>
 
