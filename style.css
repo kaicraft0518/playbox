@@ -1,0 +1,453 @@
+/* ============================================================
+   Playbox — Shared Stylesheet
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,700&display=swap');
+
+/* ── Variables ─────────────────────────────────────────── */
+:root {
+  /* Light (default) */
+  --bg:         #f5f5f2;
+  --surface:    #ffffff;
+  --surface2:   #f0f0ec;
+  --border:     #e2e2dc;
+  --text:       #1a1a18;
+  --text2:      #6b6b63;
+  --accent:     #2a6b52;
+  --accent-bg:  rgba(42,107,82,0.08);
+  --accent2:    #c0392b;
+  --shadow:     0 2px 12px rgba(0,0,0,0.07);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.10);
+  --radius:     10px;
+  --radius-sm:  6px;
+  --transition: 0.2s ease;
+}
+
+:root.dark {
+  --bg:         #0a0a0f;
+  --surface:    #0f0f1a;
+  --surface2:   #15151f;
+  --border:     #1e1e3a;
+  --text:       #e0e0ff;
+  --text2:      #5a5a8a;
+  --accent:     #00c49a;
+  --accent-bg:  rgba(0,196,154,0.08);
+  --accent2:    #ff3c6e;
+  --shadow:     0 2px 12px rgba(0,0,0,0.3);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.4);
+}
+
+/* ── Reset ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 400;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+  transition: background var(--transition), color var(--transition);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Typography ────────────────────────────────────────── */
+.font-display {
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+}
+
+.font-mono {
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── Layout ────────────────────────────────────────────── */
+.pb-container {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ── Navbar ────────────────────────────────────────────── */
+.pb-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.pb-nav-inner {
+  display: flex;
+  align-items: center;
+  height: 56px;
+  gap: 16px;
+}
+
+.pb-logo {
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+.pb-logo span {
+  color: var(--accent);
+}
+
+.pb-nav-spacer { flex: 1; }
+
+.pb-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Icon Button ───────────────────────────────────────── */
+.pb-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  transition: all var(--transition);
+  flex-shrink: 0;
+}
+.pb-icon-btn:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.pb-icon-btn.active {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Buttons ───────────────────────────────────────────── */
+.pb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+  text-decoration: none;
+}
+.pb-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+.pb-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.pb-btn.primary:hover {
+  opacity: 0.88;
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ── Settings Drawer ───────────────────────────────────── */
+.pb-drawer-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 80;
+}
+.pb-drawer-overlay.open { display: block; }
+
+.pb-drawer {
+  position: fixed;
+  top: 0;
+  right: -320px;
+  width: 300px;
+  height: 100%;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  z-index: 90;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  transition: right 0.28s cubic-bezier(0.4,0,0.2,1);
+  overflow-y: auto;
+}
+.pb-drawer.open { right: 0; }
+
+.pb-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.pb-drawer-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--text2);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.pb-drawer-close {
+  width: 28px; height: 28px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition);
+}
+.pb-drawer-close:hover { border-color: var(--accent2); color: var(--accent2); }
+
+.pb-setting-section {
+  margin-bottom: 24px;
+}
+.pb-setting-section-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--text2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.pb-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+}
+.pb-setting-label {
+  font-size: 0.85rem;
+  color: var(--text);
+  font-weight: 500;
+}
+.pb-setting-desc {
+  font-size: 0.72rem;
+  color: var(--text2);
+  margin-top: 2px;
+}
+
+/* Toggle switch */
+.pb-toggle {
+  position: relative;
+  width: 40px; height: 22px;
+  flex-shrink: 0;
+}
+.pb-toggle input { opacity: 0; width: 0; height: 0; }
+.pb-toggle-track {
+  position: absolute; inset: 0;
+  background: var(--border);
+  border-radius: 11px;
+  cursor: pointer;
+  transition: background 0.22s;
+}
+.pb-toggle input:checked + .pb-toggle-track { background: var(--accent); }
+.pb-toggle-track::after {
+  content: '';
+  position: absolute;
+  width: 16px; height: 16px;
+  background: white;
+  border-radius: 50%;
+  top: 3px; left: 3px;
+  transition: transform 0.22s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.pb-toggle input:checked + .pb-toggle-track::after { transform: translateX(18px); }
+
+/* Segmented control */
+.pb-seg {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.pb-seg-btn {
+  flex: 1;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  color: var(--text2);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.pb-seg-btn + .pb-seg-btn { border-left: 1px solid var(--border); }
+.pb-seg-btn.active {
+  background: var(--accent);
+  color: white;
+}
+.pb-seg-btn:not(.active):hover {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+/* ── Game Card ─────────────────────────────────────────── */
+.pb-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--text);
+  transition: all var(--transition);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+}
+.pb-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--accent);
+}
+.pb-card-thumb {
+  aspect-ratio: 16/9;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.pb-card-body {
+  padding: 14px 16px 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pb-card-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+}
+.pb-card-desc {
+  font-size: 0.78rem;
+  color: var(--text2);
+  line-height: 1.5;
+}
+.pb-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+.pb-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  color: var(--text2);
+  letter-spacing: 0.05em;
+}
+
+/* ── Game List Row ─────────────────────────────────────── */
+.pb-list-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--text);
+  transition: all var(--transition);
+  box-shadow: var(--shadow);
+}
+.pb-list-row:hover {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+.pb-list-icon {
+  width: 44px; height: 44px;
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+.pb-list-info { flex: 1; min-width: 0; }
+.pb-list-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+.pb-list-desc {
+  font-size: 0.75rem;
+  color: var(--text2);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pb-list-arrow {
+  color: var(--text2);
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  transition: transform var(--transition);
+}
+.pb-list-row:hover .pb-list-arrow { transform: translateX(3px); color: var(--accent); }
+
+/* ── Page fade-in ──────────────────────────────────────── */
+@keyframes pbFadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pb-fadein {
+  animation: pbFadeUp 0.4s ease both;
+}
+.pb-fadein-delay-1 { animation-delay: 0.05s; }
+.pb-fadein-delay-2 { animation-delay: 0.10s; }
+.pb-fadein-delay-3 { animation-delay: 0.15s; }
+.pb-fadein-delay-4 { animation-delay: 0.20s; }
+
+/* ── Responsive ────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .pb-container { padding: 0 14px; }
+  .pb-nav-inner { height: 50px; }
+}
