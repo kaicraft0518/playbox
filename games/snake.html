@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スネーク — Playbox</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f5f2;--surface:#ffffff;--surface2:#f0f0ec;--border:#e2e2dc;--text:#1a1a18;--text2:#6b6b63;--accent:#2a6b52;--accent-bg:rgba(42,107,82,0.08);--accent2:#c0392b;--shadow:0 2px 12px rgba(0,0,0,0.07);--shadow-lg:0 8px 32px rgba(0,0,0,0.10);--radius:10px;--radius-sm:6px;--transition:0.2s ease;}
+:root.dark{--bg:#0a0a0f;--surface:#0f0f1a;--surface2:#15151f;--border:#1e1e3a;--text:#e0e0ff;--text2:#5a5a8a;--accent:#00c49a;--accent-bg:rgba(0,196,154,0.08);--accent2:#ff3c6e;--shadow:0 2px 12px rgba(0,0,0,0.3);--shadow-lg:0 8px 32px rgba(0,0,0,0.4);}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;transition:background var(--transition),color var(--transition);touch-action:none;user-select:none;}
+.pb-nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--border);}
+.pb-nav-inner{display:flex;align-items:center;height:56px;gap:16px;max-width:960px;margin:0 auto;padding:0 20px;}
+.pb-logo{font-family:'Fraunces',serif;font-weight:700;font-size:1.25rem;color:var(--text);text-decoration:none;letter-spacing:-0.02em;}
+.pb-logo span{color:var(--accent);}
+.pb-nav-spacer{flex:1;}
+.pb-icon-btn{width:36px;height:36px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.9rem;transition:all var(--transition);}
+.pb-icon-btn:hover{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
+.pb-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:500;cursor:pointer;transition:all var(--transition);}
+.pb-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg);}
+.pb-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.pb-btn.primary:hover{opacity:0.88;}
+.pb-seg{display:flex;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;}
+.pb-seg-btn{flex:1;padding:6px 14px;background:transparent;border:none;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:0.78rem;font-weight:500;cursor:pointer;transition:all var(--transition);}
+.pb-seg-btn+.pb-seg-btn{border-left:1px solid var(--border);}
+.pb-seg-btn.active{background:var(--accent);color:white;}
+.pb-seg-btn:not(.active):hover{background:var(--accent-bg);color:var(--accent);}
+.game-wrap{display:flex;flex-direction:column;align-items:center;padding:20px 16px 48px;}
+.game-header{width:100%;max-width:480px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;}
+.game-title{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:700;letter-spacing:-0.02em;}
+.stats-bar{display:flex;gap:8px;width:100%;max-width:480px;margin-bottom:10px;flex-wrap:wrap;}
+.stat-pill{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--text2);letter-spacing:0.06em;display:flex;align-items:center;gap:6px;}
+.stat-pill b{color:var(--text);font-weight:500;}
+.stat-pill.accent b{color:var(--accent);}
+.speed-bar{width:100%;max-width:480px;margin-bottom:12px;display:flex;align-items:center;gap:10px;}
+.speed-label{font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--text2);letter-spacing:0.12em;text-transform:uppercase;white-space:nowrap;}
+.canvas-wrap{position:relative;width:100%;max-width:480px;border-radius:14px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow-lg);background:var(--surface);}
+canvas{display:block;width:100%;aspect-ratio:1;}
+.canvas-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;background:rgba(245,245,242,0.93);border-radius:14px;padding:20px;}
+:root.dark .canvas-overlay{background:rgba(10,10,15,0.93);}
+.canvas-overlay.hidden{display:none;}
+.overlay-emoji{font-size:3rem;}
+.overlay-title{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:700;letter-spacing:-0.02em;color:var(--text);}
+.overlay-title.green{color:var(--accent);}
+.overlay-title.red{color:var(--accent2);}
+.overlay-sub{font-size:0.82rem;color:var(--text2);}
+.dpad{margin-top:16px;display:grid;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,52px);gap:4px;}
+.dpad-btn{background:var(--surface);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:pointer;transition:all 0.12s;color:var(--text2);}
+.dpad-btn:active{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
+.dpad-center{background:var(--surface2);cursor:default;}
+.hint{font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--text2);letter-spacing:0.1em;margin-top:10px;text-align:center;}
+</style>
+</head>
+<body>
+<nav class="pb-nav">
+  <div class="pb-nav-inner">
+    <a href="../index.html" class="pb-logo">Play<span>box</span></a>
+    <div class="pb-nav-spacer"></div>
+    <button class="pb-icon-btn" id="themeBtn" onclick="toggleTheme()">🌤</button>
+  </div>
+</nav>
+<div class="game-wrap">
+  <div class="game-header">
+    <div class="game-title">スネーク</div>
+    <button class="pb-btn primary" id="startBtn" onclick="startGame()">▶ スタート</button>
+  </div>
+  <div class="stats-bar">
+    <div class="stat-pill">スコア <b id="statScore">0</b></div>
+    <div class="stat-pill">長さ <b id="statLen">1</b></div>
+    <div class="stat-pill accent">Best <b id="statBest">0</b></div>
+  </div>
+  <div class="speed-bar">
+    <span class="speed-label">速さ</span>
+    <div class="pb-seg">
+      <button class="pb-seg-btn active" id="spd-slow"   onclick="setSpeed('slow')">🐢 遅い</button>
+      <button class="pb-seg-btn"        id="spd-normal" onclick="setSpeed('normal')">➡ 普通</button>
+      <button class="pb-seg-btn"        id="spd-fast"   onclick="setSpeed('fast')">⚡ 速い</button>
+    </div>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="gameCanvas"></canvas>
+    <div class="canvas-overlay" id="overlay">
+      <div class="overlay-emoji" id="overlayEmoji">🐍</div>
+      <div class="overlay-title" id="overlayTitle">スネーク</div>
+      <div class="overlay-sub"   id="overlaySub">スタートボタンを押してください</div>
+      <div id="overlayBtns"></div>
+    </div>
+  </div>
+  <div class="dpad">
+    <div></div>
+    <button class="dpad-btn" ontouchstart="e=>{e.preventDefault();dpadDir(0,-1)}" onclick="dpadDir(0,-1)">↑</button>
+    <div></div>
+    <button class="dpad-btn" ontouchstart="e=>{e.preventDefault();dpadDir(-1,0)}" onclick="dpadDir(-1,0)">←</button>
+    <div class="dpad-btn dpad-center">●</div>
+    <button class="dpad-btn" ontouchstart="e=>{e.preventDefault();dpadDir(1,0)}"  onclick="dpadDir(1,0)">→</button>
+    <div></div>
+    <button class="dpad-btn" ontouchstart="e=>{e.preventDefault();dpadDir(0,1)}"  onclick="dpadDir(0,1)">↓</button>
+    <div></div>
+  </div>
+  <p class="hint">矢印キー / スワイプ / Dパッドで操作　スペースで一時停止</p>
+</div>
+<script>
+const GRID=20;
+const SPEEDS={slow:200,normal:130,fast:75};
+let snake=[],dir={x:1,y:0},nextDir={x:1,y:0},food=null;
+let score=0,best=parseInt(localStorage.getItem('pb-snake-best')||'0');
+let speed='slow',gameLoop=null,running=false,paused=false,cellSize=0;
+const canvas=document.getElementById('gameCanvas');
+const ctx=canvas.getContext('2d');
+
+function resizeCanvas(){
+  const size=canvas.parentElement.clientWidth;
+  canvas.width=size;canvas.height=size;
+  cellSize=size/GRID;
+  drawBoard();
+}
+window.addEventListener('resize',resizeCanvas);
+
+function toggleTheme(){
+  const d=document.documentElement.classList.toggle('dark');
+  document.getElementById('themeBtn').textContent=d?'🌙':'🌤';
+  localStorage.setItem('pb-theme',d?'dark':'light');
+  drawBoard();
+}
+
+function setSpeed(s){
+  speed=s;
+  ['slow','normal','fast'].forEach(id=>document.getElementById('spd-'+id).classList.toggle('active',id===s));
+  if(running&&!paused){clearInterval(gameLoop);gameLoop=setInterval(tick,SPEEDS[speed]);}
+}
+
+function startGame(){
+  clearInterval(gameLoop);
+  const mid=Math.floor(GRID/2);
+  snake=[{x:mid,y:mid}];
+  dir={x:1,y:0};nextDir={x:1,y:0};
+  score=0;running=true;paused=false;
+  document.getElementById('statScore').textContent=0;
+  document.getElementById('statLen').textContent=1;
+  document.getElementById('statBest').textContent=best;
+  const btn=document.getElementById('startBtn');
+  btn.textContent='⏸ 一時停止';btn.onclick=togglePause;
+  hideOverlay();placeFood();resizeCanvas();
+  gameLoop=setInterval(tick,SPEEDS[speed]);
+}
+
+function togglePause(){
+  if(!running){startGame();return;}
+  paused=!paused;
+  const btn=document.getElementById('startBtn');
+  if(paused){
+    clearInterval(gameLoop);
+    showOverlay('⏸','PAUSED','タップで再開',false,false,true);
+    btn.textContent='▶ 再開';btn.onclick=togglePause;
+  } else {
+    hideOverlay();
+    gameLoop=setInterval(tick,SPEEDS[speed]);
+    btn.textContent='⏸ 一時停止';btn.onclick=togglePause;
+  }
+}
+
+function tick(){
+  dir={...nextDir};
+  const head={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+  if(head.x<0||head.x>=GRID||head.y<0||head.y>=GRID)return gameOver();
+  if(snake.some(s=>s.x===head.x&&s.y===head.y))return gameOver();
+  snake.unshift(head);
+  if(head.x===food.x&&head.y===food.y){
+    score+=10;
+    if(score>best){best=score;localStorage.setItem('pb-snake-best',best);}
+    document.getElementById('statScore').textContent=score;
+    document.getElementById('statLen').textContent=snake.length;
+    document.getElementById('statBest').textContent=best;
+    placeFood();
+  } else {snake.pop();}
+  drawBoard();
+}
+
+function gameOver(){
+  clearInterval(gameLoop);running=false;
+  const btn=document.getElementById('startBtn');
+  btn.textContent='▶ スタート';btn.onclick=startGame;
+  drawBoard();
+  showOverlay('💀','GAME OVER','スコア: '+score+'　長さ: '+snake.length,true);
+}
+
+function placeFood(){
+  const empty=[];
+  for(let x=0;x<GRID;x++)for(let y=0;y<GRID;y++)
+    if(!snake.some(s=>s.x===x&&s.y===y))empty.push({x,y});
+  food=empty[Math.floor(Math.random()*empty.length)];
+}
+
+function drawBoard(){
+  if(!cellSize)return;
+  const dark=document.documentElement.classList.contains('dark');
+  const cs=cellSize;
+  ctx.fillStyle=dark?'#0f0f1a':'#f5f5f2';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle=dark?'#1a1a2a':'#eaeae6';ctx.lineWidth=0.5;
+  for(let i=0;i<=GRID;i++){
+    ctx.beginPath();ctx.moveTo(i*cs,0);ctx.lineTo(i*cs,canvas.height);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,i*cs);ctx.lineTo(canvas.width,i*cs);ctx.stroke();
+  }
+  const pad=cs*0.08,r=cs*0.35;
+  snake.forEach((seg,i)=>{
+    const t=i/snake.length;
+    ctx.fillStyle=i===0?(dark?'#00c49a':'#2a6b52'):t<0.5?(dark?'#005a44':'#3d8f6e'):(dark?'#003d2e':'#6ab89a');
+    rr(seg.x*cs+pad,seg.y*cs+pad,cs-pad*2,cs-pad*2,r);
+    ctx.fill();
+    if(i===0){
+      ctx.fillStyle=dark?'#0a0a0f':'#fff';
+      ctx.beginPath();
+      ctx.arc(seg.x*cs+cs*0.5+dir.x*cs*0.2,seg.y*cs+cs*0.5+dir.y*cs*0.2,cs*0.1,0,Math.PI*2);
+      ctx.fill();
+    }
+  });
+  if(food){
+    const fx=food.x*cs+cs*0.5,fy=food.y*cs+cs*0.5;
+    const g=ctx.createRadialGradient(fx,fy,0,fx,fy,cs*0.5);
+    g.addColorStop(0,dark?'rgba(255,60,110,0.4)':'rgba(192,57,43,0.3)');
+    g.addColorStop(1,'transparent');
+    ctx.fillStyle=g;ctx.fillRect(food.x*cs,food.y*cs,cs,cs);
+    ctx.fillStyle=dark?'#ff3c6e':'#c0392b';
+    ctx.beginPath();ctx.arc(fx,fy,cs*0.32,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle=dark?'#ff3c6e':'#c0392b';ctx.lineWidth=cs*0.07;
+    ctx.beginPath();ctx.moveTo(fx,fy-cs*0.32);ctx.lineTo(fx+cs*0.12,fy-cs*0.48);ctx.stroke();
+  }
+}
+
+function rr(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+function showOverlay(emoji,title,sub,isGameOver=false,_=false,isResume=false){
+  document.getElementById('overlayEmoji').textContent=emoji;
+  document.getElementById('overlayTitle').textContent=title;
+  document.getElementById('overlayTitle').className='overlay-title'+(isGameOver?' red':'');
+  document.getElementById('overlaySub').textContent=sub;
+  const btns=document.getElementById('overlayBtns');
+  if(isGameOver)btns.innerHTML='<button class="pb-btn primary" onclick="startGame()" style="margin-top:4px;">もう一度</button>';
+  else if(isResume)btns.innerHTML='<button class="pb-btn primary" onclick="togglePause()" style="margin-top:4px;">▶ 再開</button>';
+  else btns.innerHTML='';
+  document.getElementById('overlay').classList.remove('hidden');
+}
+function hideOverlay(){document.getElementById('overlay').classList.add('hidden');}
+
+document.addEventListener('keydown',e=>{
+  if(e.key===' '){e.preventDefault();if(running)togglePause();else startGame();return;}
+  if(!running||paused)return;
+  const map={ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0}};
+  const d=map[e.key];if(!d)return;e.preventDefault();
+  if(d.x!==-dir.x||d.y!==-dir.y)nextDir=d;
+});
+
+function dpadDir(dx,dy){
+  if(!running||paused)return;
+  if(dx!==-dir.x||dy!==-dir.y)nextDir={x:dx,y:dy};
+}
+
+let tx=0,ty=0;
+canvas.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+canvas.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<20)return;
+  if(!running||paused)return;
+  const nd=Math.abs(dx)>Math.abs(dy)?(dx>0?{x:1,y:0}:{x:-1,y:0}):(dy>0?{x:0,y:1}:{x:0,y:-1});
+  if(nd.x!==-dir.x||nd.y!==-dir.y)nextDir=nd;
+},{passive:true});
+
+(function(){
+  const saved=localStorage.getItem('pb-theme');
+  const dark=saved==='dark'||(!saved&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark',dark);
+  document.getElementById('themeBtn').textContent=dark?'🌙':'🌤';
+  document.getElementById('statBest').textContent=best;
+  resizeCanvas();
+})();
+</script>
+</body>
+</html>
