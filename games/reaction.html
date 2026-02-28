@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>反応速度テスト — Playbox</title>
+<link rel="stylesheet" href="../style.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  .game-wrap {
+    min-height: calc(100vh - 57px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 32px 20px 48px;
+  }
+
+  .game-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .game-header h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .game-header p {
+    font-size: 0.82rem;
+    color: var(--text2);
+  }
+
+  /* ── Arena ── */
+  .arena {
+    width: 100%;
+    max-width: 480px;
+    aspect-ratio: 4/3;
+    border-radius: 16px;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s, border-color 0.15s;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .arena::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  /* States */
+  .arena.state-idle {
+    background: var(--surface);
+    border-color: var(--border);
+    cursor: pointer;
+  }
+  .arena.state-waiting {
+    background: #dc2626;
+    border-color: #dc2626;
+    cursor: not-allowed;
+  }
+  :root.dark .arena.state-waiting {
+    background: #7f1d1d;
+    border-color: #ef4444;
+  }
+  .arena.state-go {
+    background: var(--accent);
+    border-color: var(--accent);
+    cursor: pointer;
+  }
+  :root.dark .arena.state-go {
+    background: #065f46;
+    border-color: var(--accent);
+  }
+  .arena.state-result {
+    background: var(--surface);
+    border-color: var(--accent);
+    cursor: pointer;
+  }
+  .arena.state-early {
+    background: #f59e0b;
+    border-color: #f59e0b;
+    cursor: pointer;
+  }
+  :root.dark .arena.state-early {
+    background: #78350f;
+    border-color: #f59e0b;
+  }
+
+  .arena-icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+    line-height: 1;
+    transition: transform 0.2s;
+  }
+  .arena.state-go .arena-icon {
+    animation: iconPop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes iconPop {
+    from { transform: scale(0.5); }
+    to   { transform: scale(1); }
+  }
+
+  .arena-main-text {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    text-align: center;
+    padding: 0 20px;
+    line-height: 1.2;
+  }
+  .arena.state-waiting .arena-main-text,
+  .arena.state-go .arena-main-text,
+  .arena.state-early .arena-main-text {
+    color: white;
+  }
+  :root.dark .arena.state-go .arena-main-text { color: var(--accent); }
+
+  .arena-sub-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text2);
+    margin-top: 8px;
+    letter-spacing: 0.08em;
+    text-align: center;
+  }
+  .arena.state-waiting .arena-sub-text,
+  .arena.state-go .arena-sub-text,
+  .arena.state-early .arena-sub-text {
+    color: rgba(255,255,255,0.7);
+  }
+  :root.dark .arena.state-go .arena-sub-text { color: rgba(0,196,154,0.6); }
+
+  .reaction-time {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(2.5rem, 8vw, 4rem);
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .reaction-unit {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text2);
+    letter-spacing: 0.1em;
+  }
+
+  /* ── Stats ── */
+  .stats-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    width: 100%;
+    max-width: 480px;
+  }
+  .stat-card {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 12px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .stat-value {
+    font-family: 'Fraunces', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-value.best { color: var(--accent); }
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text2);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ── History ── */
+  .history-wrap {
+    width: 100%;
+    max-width: 480px;
+    margin-top: 20px;
+  }
+  .history-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text2);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    animation: slideIn 0.25s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  .history-rank {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text2);
+    min-width: 20px;
+  }
+  .history-bar-wrap {
+    flex: 1;
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .history-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+  .history-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text);
+    min-width: 60px;
+    text-align: right;
+  }
+  .history-item.is-best .history-time { color: var(--accent); font-weight: 500; }
+  .history-item.is-best .history-bar { background: var(--accent); }
+
+  /* ── Reset btn ── */
+  .reset-row {
+    margin-top: 12px;
+    text-align: right;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  /* rating badge */
+  .rating {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    margin-top: 6px;
+    display: inline-block;
+  }
+</style>
+</head>
+<body>
+
+<nav class="pb-nav">
+  <div class="pb-container pb-nav-inner">
+    <a href="../index.html" class="pb-logo">Play<span>box</span></a>
+    <div class="pb-nav-spacer"></div>
+    <div class="pb-nav-actions">
+      <button class="pb-icon-btn" id="themeBtn" onclick="toggleTheme()" title="テーマ切替">🌤</button>
+    </div>
+  </div>
+</nav>
+
+<div class="game-wrap">
+  <div class="game-header pb-fadein">
+    <h1>反応速度テスト</h1>
+    <p>緑になったら即タップ！あなたの反射神経を測定します。</p>
+  </div>
+
+  <!-- Arena -->
+  <div class="arena state-idle pb-fadein pb-fadein-delay-1" id="arena" onclick="handleTap()">
+    <div class="arena-icon" id="arenaIcon">👆</div>
+    <div class="arena-main-text" id="arenaMain">タップしてスタート</div>
+    <div class="arena-sub-text" id="arenaSub">画面をタップしてください</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row pb-fadein pb-fadein-delay-2">
+    <div class="stat-card">
+      <div class="stat-value best" id="statBest">—</div>
+      <div class="stat-label">Best</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statAvg">—</div>
+      <div class="stat-label">平均</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statCount">0</div>
+      <div class="stat-label">試行回数</div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="history-wrap pb-fadein pb-fadein-delay-3" id="historyWrap" style="display:none;">
+    <div class="history-title">履歴（直近10回）</div>
+    <div class="history-list" id="historyList"></div>
+    <div class="reset-row">
+      <button class="pb-btn" onclick="resetAll()">🗑 リセット</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── State ──
+  const STATES = { IDLE: 'idle', WAITING: 'waiting', GO: 'go', RESULT: 'result', EARLY: 'early' };
+  let state = STATES.IDLE;
+  let waitTimer = null;
+  let startTime = null;
+  let history = [];   // ms values
+  let bestScore = null;
+
+  // ── Theme ──
+  function toggleTheme() {
+    const isDark = document.documentElement.classList.toggle('dark');
+    document.getElementById('themeBtn').textContent = isDark ? '🌙' : '🌤';
+    localStorage.setItem('pb-theme', isDark ? 'dark' : 'light');
+  }
+
+  // ── Arena helpers ──
+  const arena     = document.getElementById('arena');
+  const arenaIcon = document.getElementById('arenaIcon');
+  const arenaMain = document.getElementById('arenaMain');
+  const arenaSub  = document.getElementById('arenaSub');
+
+  function setArena(st, icon, main, sub) {
+    arena.className = `arena state-${st}`;
+    arenaIcon.textContent = icon;
+    arenaMain.textContent = main;
+    arenaSub.textContent  = sub;
+  }
+
+  // ── Main tap handler ──
+  function handleTap() {
+    if (state === STATES.IDLE || state === STATES.RESULT) {
+      startWaiting();
+    } else if (state === STATES.WAITING) {
+      tooEarly();
+    } else if (state === STATES.GO) {
+      recordTime();
+    } else if (state === STATES.EARLY) {
+      startWaiting();
+    }
+  }
+
+  function startWaiting() {
+    state = STATES.WAITING;
+    setArena('waiting', '🔴', '待って…', '緑になるまでタップしないで');
+    const delay = 1500 + Math.random() * 3000;
+    waitTimer = setTimeout(showGo, delay);
+  }
+
+  function showGo() {
+    state = STATES.GO;
+    startTime = performance.now();
+    setArena('go', '🟢', '今すぐタップ！', 'タップ！');
+  }
+
+  function tooEarly() {
+    clearTimeout(waitTimer);
+    state = STATES.EARLY;
+    setArena('early', '⚠️', '早すぎ！', 'タップしてもう一度');
+  }
+
+  function recordTime() {
+    const ms = Math.round(performance.now() - startTime);
+    state = STATES.RESULT;
+
+    // Add to history
+    history.unshift(ms);
+    if (history.length > 10) history.pop();
+
+    // Best
+    if (bestScore === null || ms < bestScore) bestScore = ms;
+
+    // Save
+    localStorage.setItem('pb-reaction-history', JSON.stringify(history));
+    localStorage.setItem('pb-reaction-best', bestScore);
+
+    // Show result
+    const rating = getRating(ms);
+    arena.className = 'arena state-result';
+    arenaIcon.textContent = rating.emoji;
+    arenaMain.innerHTML = `<span class="reaction-time">${ms}</span><span class="reaction-unit"> ms</span>`;
+    arenaSub.textContent = rating.label + ' — タップしてもう一度';
+
+    updateStats();
+    renderHistory();
+  }
+
+  function getRating(ms) {
+    if (ms < 150) return { emoji: '⚡', label: '超人的' };
+    if (ms < 200) return { emoji: '🔥', label: '非常に速い' };
+    if (ms < 250) return { emoji: '✨', label: '速い' };
+    if (ms < 300) return { emoji: '👍', label: '普通' };
+    if (ms < 400) return { emoji: '🐢', label: 'やや遅め' };
+    return { emoji: '😴', label: 'もう少し頑張ろう' };
+  }
+
+  // ── Stats ──
+  function updateStats() {
+    const best = document.getElementById('statBest');
+    const avg  = document.getElementById('statAvg');
+    const cnt  = document.getElementById('statCount');
+
+    best.textContent = bestScore !== null ? bestScore + ' ms' : '—';
+    cnt.textContent  = history.length;
+
+    if (history.length > 0) {
+      const a = Math.round(history.reduce((s, v) => s + v, 0) / history.length);
+      avg.textContent = a + ' ms';
+    } else {
+      avg.textContent = '—';
+    }
+  }
+
+  // ── History ──
+  function renderHistory() {
+    if (history.length === 0) {
+      document.getElementById('historyWrap').style.display = 'none';
+      return;
+    }
+    document.getElementById('historyWrap').style.display = 'block';
+
+    const list = document.getElementById('historyList');
+    list.innerHTML = '';
+    const min = Math.min(...history);
+    const max = Math.max(...history);
+    const range = max - min || 1;
+
+    history.forEach((ms, i) => {
+      const isBest = ms === min;
+      const barPct = 100 - Math.round(((ms - min) / range) * 80); // invert: faster = longer bar
+      const item = document.createElement('div');
+      item.className = 'history-item' + (isBest ? ' is-best' : '');
+      item.innerHTML = `
+        <span class="history-rank">${String(i + 1).padStart(2, '0')}</span>
+        <div class="history-bar-wrap">
+          <div class="history-bar" style="width:${barPct}%"></div>
+        </div>
+        <span class="history-time">${ms} ms${isBest ? ' 🏆' : ''}</span>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  // ── Reset ──
+  function resetAll() {
+    history = [];
+    bestScore = null;
+    localStorage.removeItem('pb-reaction-history');
+    localStorage.removeItem('pb-reaction-best');
+    state = STATES.IDLE;
+    setArena('idle', '👆', 'タップしてスタート', '画面をタップしてください');
+    updateStats();
+    renderHistory();
+  }
+
+  // ── Init ──
+  (function() {
+    // Theme
+    const saved = localStorage.getItem('pb-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const dark = saved === 'dark' || (!saved && prefersDark);
+    document.documentElement.classList.toggle('dark', dark);
+    document.getElementById('themeBtn').textContent = dark ? '🌙' : '🌤';
+
+    // Load saved data
+    const savedHistory = localStorage.getItem('pb-reaction-history');
+    const savedBest    = localStorage.getItem('pb-reaction-best');
+    if (savedHistory) history = JSON.parse(savedHistory);
+    if (savedBest)    bestScore = parseInt(savedBest);
+
+    updateStats();
+    renderHistory();
+  })();
+</script>
+</body>
+</html>
