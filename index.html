@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Playbox</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ── Page-specific styles ── */
+  .hero {
+    padding: 48px 0 36px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+  .hero-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--accent);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .hero-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: clamp(2rem, 5vw, 3rem);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  .hero-title span { color: var(--accent); }
+  .hero-sub {
+    font-size: 0.9rem;
+    color: var(--text2);
+    max-width: 400px;
+  }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .toolbar-left {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text2);
+    letter-spacing: 0.1em;
+  }
+  .toolbar-left span { color: var(--accent); font-size: 0.82rem; }
+
+  /* ── Card Grid ── */
+  .game-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+  .game-grid.hidden { display: none; }
+
+  /* ── List View ── */
+  .game-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 48px;
+  }
+  .game-list.hidden { display: none; }
+
+  /* ── Card thumbnail decoration ── */
+  .thumb-hitblow {
+    background: linear-gradient(135deg, #e8f5f0 0%, #f0f7f4 100%);
+  }
+  :root.dark .thumb-hitblow {
+    background: linear-gradient(135deg, #0d1f1a 0%, #0f1a16 100%);
+  }
+  .thumb-hitblow-inner {
+    display: flex;
+    gap: 5px;
+  }
+  .thumb-dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── Coming soon card ── */
+  .pb-card.coming-soon {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  .pb-card.coming-soon .pb-card-thumb {
+    position: relative;
+  }
+  .coming-badge {
+    position: absolute;
+    top: 8px; right: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text2);
+  }
+
+  /* ── Footer ── */
+  .pb-footer {
+    border-top: 1px solid var(--border);
+    padding: 20px 0;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .pb-footer-text {
+    font-size: 0.72rem;
+    color: var(--text2);
+    font-family: 'DM Mono', monospace;
+  }
+  .pb-footer-logo {
+    font-family: 'Fraunces', serif;
+    font-size: 0.9rem;
+    color: var(--text2);
+  }
+  .pb-footer-logo span { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- ── Navbar ── -->
+<nav class="pb-nav">
+  <div class="pb-container pb-nav-inner">
+    <a href="index.html" class="pb-logo">Play<span>box</span></a>
+    <div class="pb-nav-spacer"></div>
+    <div class="pb-nav-actions">
+      <button class="pb-icon-btn" id="themeBtn" onclick="toggleTheme()" title="テーマ切替">🌤</button>
+      <button class="pb-icon-btn" id="settingsBtn" onclick="openDrawer()" title="設定">⚙</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Settings Drawer ── -->
+<div class="pb-drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<aside class="pb-drawer" id="drawer">
+  <div class="pb-drawer-header">
+    <span class="pb-drawer-title">Settings</span>
+    <button class="pb-drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+
+  <div class="pb-setting-section">
+    <div class="pb-setting-section-title">表示</div>
+
+    <div class="pb-setting-row">
+      <div>
+        <div class="pb-setting-label">ゲーム一覧の表示形式</div>
+      </div>
+    </div>
+    <div class="pb-seg" style="margin-bottom:8px;">
+      <button class="pb-seg-btn active" id="viewCardBtn" onclick="setView('card')">
+        ⊞ カード
+      </button>
+      <button class="pb-seg-btn" id="viewListBtn" onclick="setView('list')">
+        ☰ リスト
+      </button>
+    </div>
+
+    <div class="pb-setting-row">
+      <div>
+        <div class="pb-setting-label">ダークモード</div>
+        <div class="pb-setting-desc">画面を暗いテーマに切り替えます</div>
+      </div>
+      <label class="pb-toggle">
+        <input type="checkbox" id="darkToggle" onchange="toggleTheme()">
+        <div class="pb-toggle-track"></div>
+      </label>
+    </div>
+  </div>
+
+  <div class="pb-setting-section">
+    <div class="pb-setting-section-title">Playbox について</div>
+    <div style="font-size:0.78rem; color:var(--text2); line-height:1.7;">
+      ブラウザで遊べるミニゲーム集です。<br>
+      ゲームは随時追加予定。
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main ── -->
+<main>
+  <div class="pb-container">
+
+    <!-- Hero -->
+    <div class="hero pb-fadein">
+      <div class="hero-label">Mini Game Collection</div>
+      <h1 class="hero-title">Play<span>box</span></h1>
+      <p class="hero-sub">ブラウザだけで遊べるミニゲームを集めました。好きなゲームを選んでどうぞ。</p>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar pb-fadein pb-fadein-delay-1">
+      <div class="toolbar-left">
+        <span id="gameCount">1</span> GAMES
+      </div>
+      <div class="pb-seg" style="width:auto;">
+        <button class="pb-seg-btn active" id="toolViewCardBtn" onclick="setView('card')">⊞ カード</button>
+        <button class="pb-seg-btn" id="toolViewListBtn" onclick="setView('list')">☰ リスト</button>
+      </div>
+    </div>
+
+    <!-- Card Grid -->
+    <div class="game-grid" id="gameGrid">
+
+      <!-- Hit & Blow -->
+      <a href="games/hit-and-blow.html" class="pb-card pb-fadein pb-fadein-delay-2">
+        <div class="pb-card-thumb thumb-hitblow">
+          <div class="thumb-hitblow-inner">
+            <div class="thumb-dot" style="background:#3b82f6;"></div>
+            <div class="thumb-dot" style="background:#ef4444;"></div>
+            <div class="thumb-dot" style="background:#22c55e;"></div>
+            <div class="thumb-dot" style="background:#facc15;"></div>
+          </div>
+        </div>
+        <div class="pb-card-body">
+          <div class="pb-card-title">Hit & Blow</div>
+          <div class="pb-card-desc">隠れた色の並びを推理して当てよう。論理と消去法が鍵。</div>
+          <div class="pb-card-tags">
+            <span class="pb-tag">推理</span>
+            <span class="pb-tag">1人</span>
+            <span class="pb-tag">カラー</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Coming Soon: 反応速度テスト -->
+      <div class="pb-card coming-soon">
+        <div class="pb-card-thumb" style="background:linear-gradient(135deg,#fff3e0,#fff8f0);">
+          <span style="font-size:2rem;">⚡</span>
+          <span class="coming-badge">COMING SOON</span>
+        </div>
+        <div class="pb-card-body">
+          <div class="pb-card-title">反応速度テスト</div>
+          <div class="pb-card-desc">シグナルが出たら即タップ！あなたの反射神経を計測。</div>
+          <div class="pb-card-tags">
+            <span class="pb-tag">反射</span>
+            <span class="pb-tag">1人</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coming Soon: 神経衰弱 -->
+      <div class="pb-card coming-soon">
+        <div class="pb-card-thumb" style="background:linear-gradient(135deg,#e8eaf6,#f3f4fb);">
+          <span style="font-size:2rem;">🃏</span>
+          <span class="coming-badge">COMING SOON</span>
+        </div>
+        <div class="pb-card-body">
+          <div class="pb-card-title">神経衰弱</div>
+          <div class="pb-card-desc">カードの位置を記憶してペアを揃えよう。</div>
+          <div class="pb-card-tags">
+            <span class="pb-tag">記憶</span>
+            <span class="pb-tag">1人</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- List View -->
+    <div class="game-list hidden" id="gameList">
+
+      <a href="games/hit-and-blow.html" class="pb-list-row pb-fadein">
+        <div class="pb-list-icon" style="background:linear-gradient(135deg,#e8f5f0,#f0f7f4);">🎯</div>
+        <div class="pb-list-info">
+          <div class="pb-list-title">Hit & Blow</div>
+          <div class="pb-list-desc">隠れた色の並びを推理して当てよう。論理と消去法が鍵。</div>
+        </div>
+        <div class="pb-list-tags" style="display:flex;gap:4px;flex-shrink:0;">
+          <span class="pb-tag">推理</span>
+        </div>
+        <span class="pb-list-arrow">→</span>
+      </a>
+
+      <div class="pb-list-row" style="opacity:0.45;pointer-events:none;">
+        <div class="pb-list-icon">⚡</div>
+        <div class="pb-list-info">
+          <div class="pb-list-title">反応速度テスト</div>
+          <div class="pb-list-desc">シグナルが出たら即タップ！あなたの反射神経を計測。</div>
+        </div>
+        <span class="pb-tag" style="flex-shrink:0;">SOON</span>
+      </div>
+
+      <div class="pb-list-row" style="opacity:0.45;pointer-events:none;">
+        <div class="pb-list-icon">🃏</div>
+        <div class="pb-list-info">
+          <div class="pb-list-title">神経衰弱</div>
+          <div class="pb-list-desc">カードの位置を記憶してペアを揃えよう。</div>
+        </div>
+        <span class="pb-tag" style="flex-shrink:0;">SOON</span>
+      </div>
+
+    </div>
+
+  </div>
+</main>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="pb-container pb-footer">
+    <span class="pb-footer-logo">Play<span>box</span></span>
+    <span class="pb-footer-text">Mini Game Collection</span>
+  </div>
+</footer>
+
+<script>
+  // ── Theme ──────────────────────────────────────────────
+  function applyTheme(dark) {
+    document.documentElement.classList.toggle('dark', dark);
+    document.getElementById('darkToggle').checked = dark;
+    document.getElementById('themeBtn').textContent = dark ? '🌙' : '🌤';
+    localStorage.setItem('pb-theme', dark ? 'dark' : 'light');
+  }
+
+  function toggleTheme() {
+    const isDark = document.documentElement.classList.contains('dark');
+    applyTheme(!isDark);
+    // Sync both toggles
+    document.getElementById('darkToggle').checked = !isDark;
+  }
+
+  // ── View mode ──────────────────────────────────────────
+  function setView(mode) {
+    const isCard = mode === 'card';
+    document.getElementById('gameGrid').classList.toggle('hidden', !isCard);
+    document.getElementById('gameList').classList.toggle('hidden', isCard);
+
+    // Sync all seg buttons
+    ['viewCardBtn','toolViewCardBtn'].forEach(id => {
+      document.getElementById(id).classList.toggle('active', isCard);
+    });
+    ['viewListBtn','toolViewListBtn'].forEach(id => {
+      document.getElementById(id).classList.toggle('active', !isCard);
+    });
+
+    localStorage.setItem('pb-view', mode);
+  }
+
+  // ── Drawer ─────────────────────────────────────────────
+  function openDrawer() {
+    document.getElementById('drawer').classList.add('open');
+    document.getElementById('drawerOverlay').classList.add('open');
+    document.getElementById('settingsBtn').classList.add('active');
+  }
+  function closeDrawer() {
+    document.getElementById('drawer').classList.remove('open');
+    document.getElementById('drawerOverlay').classList.remove('open');
+    document.getElementById('settingsBtn').classList.remove('active');
+  }
+
+  // ── Init ───────────────────────────────────────────────
+  (function() {
+    // Theme
+    const savedTheme = localStorage.getItem('pb-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(savedTheme === 'dark' || (!savedTheme && prefersDark));
+
+    // View
+    const savedView = localStorage.getItem('pb-view') || 'card';
+    setView(savedView);
+  })();
+</script>
+
+</body>
+</html>
