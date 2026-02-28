@@ -96,6 +96,9 @@ body {
   align-items: center;
   height: 56px;
   gap: 16px;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
 .pb-logo {
@@ -499,6 +502,8 @@ body {
     color: var(--text);
     font-family: 'Share Tech Mono', monospace;
     min-height: 100vh;
+  }
+  .game-body {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -778,7 +783,7 @@ body {
 </head>
 <body>
 <nav class="pb-nav">
-  <div class="pb-container pb-nav-inner">
+  <div class="pb-nav-inner">
     <a href="../index.html" class="pb-logo">Play<span>box</span></a>
     <div class="pb-nav-spacer"></div>
     <div class="pb-nav-actions">
@@ -787,6 +792,7 @@ body {
   </div>
 </nav>
 
+<div class="game-body">
 <div class="container">
   <header>
     <h1>HIT & BLOW</h1>
@@ -858,6 +864,7 @@ body {
       </div>
     </div>
   </div>
+</div>
 </div>
 
 <!-- END OVERLAY -->
