@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hit & Blow — Playbox</title>
+<link rel="stylesheet" href="../style.css">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Zen+Dots&display=swap" rel="stylesheet">
+<style>
+  /* Light default — synced with Playbox */
+  :root {
+    --bg:         #f5f5f2;
+    --panel:      #ffffff;
+    --border:     #e2e2dc;
+    --accent:     #2a6b52;
+    --accent2:    #c0392b;
+    --text:       #1a1a18;
+    --muted:      #6b6b63;
+    --hit:        #2a6b52;
+    --blow:       #c47a00;
+    --overlay-bg: rgba(245,245,242,0.93);
+    --glow1:      rgba(42,107,82,0.05);
+    --glow2:      rgba(192,57,43,0.05);
+  }
+  /* Dark mode */
+  :root.dark {
+    --bg:         #0a0a0f;
+    --panel:      #0f0f1a;
+    --border:     #1e1e3a;
+    --accent:     #00c49a;
+    --accent2:    #ff3c6e;
+    --text:       #e0e0ff;
+    --muted:      #5a5a8a;
+    --hit:        #00c49a;
+    --blow:       #ffb800;
+    --overlay-bg: rgba(10,10,15,0.9);
+    --glow1:      rgba(0,196,154,0.06);
+    --glow2:      rgba(255,60,110,0.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 15% 20%, var(--glow1) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 80%, var(--glow2) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .container { position: relative; z-index: 1; width: 100%; max-width: 720px; }
+
+  header { text-align: center; margin-bottom: 14px; }
+  h1 {
+    font-family: 'Zen Dots', cursive;
+    font-size: 2.2rem;
+    letter-spacing: 0.15em;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 16px rgba(0,245,196,0.5));
+  }
+  .subtitle { color: var(--muted); font-size: 0.68rem; letter-spacing: 0.3em; margin-top: 4px; }
+
+  /* ── TOP BAR ── */
+  .top-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .diff-group { display: flex; gap: 6px; }
+  .seg-btn {
+    padding: 6px 12px; background: transparent;
+    border: 1px solid var(--border); color: var(--muted);
+    font-family: 'Share Tech Mono', monospace; font-size: 0.7rem;
+    letter-spacing: 0.1em; cursor: pointer; border-radius: 2px; transition: all 0.2s;
+  }
+  .seg-btn.active, .seg-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,245,196,0.05); }
+  .info-chip { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.1em; }
+  .info-chip span { color: var(--accent); margin-left: 5px; }
+  .settings-toggle-btn {
+    padding: 6px 12px; background: transparent;
+    border: 1px solid var(--border); color: var(--muted);
+    font-family: 'Share Tech Mono', monospace; font-size: 0.7rem;
+    letter-spacing: 0.1em; cursor: pointer; border-radius: 2px; transition: all 0.2s;
+  }
+  .settings-toggle-btn:hover, .settings-toggle-btn.open {
+    border-color: var(--blow); color: var(--blow); background: rgba(255,184,0,0.05);
+  }
+  .theme-toggle-btn {
+    margin-left: auto;
+    padding: 6px 10px; background: transparent;
+    border: 1px solid var(--border); color: var(--muted);
+    font-size: 0.85rem; cursor: pointer; border-radius: 2px; transition: all 0.2s;
+    line-height: 1;
+  }
+  .theme-toggle-btn:hover { border-color: var(--accent); background: rgba(0,196,154,0.05); }
+
+  /* ── SETTINGS PANEL ── */
+  .settings-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .settings-panel.open { display: flex; }
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .setting-label {
+    font-size: 0.68rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    min-width: 100px;
+    flex-shrink: 0;
+  }
+  .setting-label em { color: var(--text); font-style: normal; }
+
+  /* toggle switch */
+  .toggle-wrap { display: flex; align-items: center; gap: 10px; }
+  .toggle {
+    position: relative; width: 44px; height: 22px; flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute; inset: 0;
+    background: var(--border);
+    border-radius: 11px;
+    cursor: pointer;
+    transition: background 0.25s;
+  }
+  .toggle input:checked + .toggle-track { background: var(--accent); }
+  .toggle-track::after {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    top: 3px; left: 3px;
+    transition: transform 0.25s;
+  }
+  .toggle input:checked + .toggle-track::after { transform: translateX(22px); }
+  .toggle-val {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    min-width: 36px;
+  }
+  .toggle input:checked ~ .toggle-val { color: var(--accent); }
+
+  /* number stepper */
+  .stepper { display: flex; align-items: center; gap: 0; }
+  .step-btn {
+    width: 28px; height: 28px;
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    font-size: 1rem; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .step-val {
+    width: 40px; height: 28px;
+    background: var(--bg);
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    color: var(--accent);
+    font-family: 'Zen Dots', cursive; font-size: 0.9rem;
+    text-align: center;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .apply-btn {
+    padding: 8px 20px; background: var(--accent); color: var(--bg);
+    border: none; font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem; letter-spacing: 0.15em; font-weight: bold;
+    cursor: pointer; border-radius: 2px; transition: all 0.2s;
+    align-self: flex-end;
+  }
+  .apply-btn:hover { background: #00ffd0; box-shadow: 0 0 14px rgba(0,245,196,0.4); }
+
+  .setting-note {
+    font-size: 0.6rem; color: var(--muted); letter-spacing: 0.08em;
+    border-top: 1px solid var(--border); padding-top: 10px;
+  }
+  .setting-note em { color: var(--blow); font-style: normal; }
+
+  /* ── MAIN AREA ── */
+  .main-layout { display: flex; flex-direction: column; gap: 14px; align-items: stretch; }
+
+  .board-wrap {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 12px 10px;
+    overflow-x: auto;
+    width: 100%;
+  }
+  .board { display: flex; flex-direction: column; gap: 0; }
+  .slot-row { display: flex; align-items: center; gap: 0; }
+  .row-label {
+    font-size: 0.58rem; color: var(--muted);
+    min-width: 22px; text-align: right; padding-right: 6px; flex-shrink: 0;
+  }
+  .result-row { display: flex; align-items: flex-start; gap: 0; margin-top: 6px; }
+  .result-row-spacer { min-width: 22px; padding-right: 6px; flex-shrink: 0; }
+
+  .cell {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px dashed var(--border); background: transparent;
+    margin: 3px; transition: all 0.2s; flex-shrink: 0;
+    cursor: default;
+  }
+  .cell.cur-empty { border-color: rgba(0,245,196,0.25); cursor: pointer; }
+  .cell.cur-empty:hover { border-color: rgba(0,245,196,0.5); }
+  .cell.active-cell {
+    border-style: solid; border-color: var(--accent);
+    animation: cellPulse 1.2s ease infinite alternate; cursor: pointer;
+  }
+  @keyframes cellPulse {
+    from { box-shadow: 0 0 4px rgba(0,245,196,0.2); }
+    to   { box-shadow: 0 0 14px rgba(0,245,196,0.7); }
+  }
+  .cell.cur-filled { border-style: solid; cursor: pointer; }
+  .cell.cur-filled:hover { opacity: 0.7; }
+  .cell.locked { border-style: solid; cursor: default; }
+
+  .col-result {
+    width: 40px; display: flex; flex-direction: column;
+    align-items: center; font-size: 0.6rem; gap: 1px; flex-shrink: 0;
+  }
+  .col-result .h { color: var(--hit); }
+  .col-result .b { color: var(--blow); }
+  .col-result b { font-family: 'Zen Dots', cursive; font-size: 0.78rem; margin-right: 1px; }
+
+  /* ── CONTROLS ── */
+  .controls-panel { width: 100%; display: flex; flex-direction: row; gap: 10px; align-items: flex-start; }
+
+  .palette-panel {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 4px; padding: 14px 12px 22px; flex: 1;
+  }
+  .section-label { font-size: 0.58rem; color: var(--muted); letter-spacing: 0.22em; margin-bottom: 12px; }
+  .palette { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+  .color-chip {
+    aspect-ratio: 1; border-radius: 50%; cursor: pointer;
+    border: 3px solid transparent; transition: all 0.18s; position: relative;
+  }
+  .color-chip:hover:not(.used) { transform: scale(1.1); }
+  .color-chip.used { opacity: 0.18; cursor: not-allowed; transform: none !important; }
+  :root:not(.dark) .color-chip[data-id='white'] { box-shadow: 0 2px 8px rgba(0,0,0,0.12), inset 0 0 0 1.5px #ccc !important; }
+  .chip-label {
+    position: absolute; bottom: -15px; left: 50%; transform: translateX(-50%);
+    font-size: 0.55rem; color: var(--muted); white-space: nowrap;
+  }
+
+  .action-panel {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 4px; padding: 12px;
+    display: flex; flex-direction: column; gap: 8px; min-width: 160px;
+  }
+  .legend { font-size: 0.58rem; color: var(--muted); letter-spacing: 0.05em; line-height: 1.9; }
+  .legend span { color: var(--hit); }
+  .legend em { color: var(--blow); font-style: normal; }
+
+  .btn-row { display: flex; gap: 7px; }
+  .clear-btn {
+    padding: 8px 10px; background: transparent;
+    border: 1px solid var(--border); color: var(--muted);
+    font-family: 'Share Tech Mono', monospace; font-size: 0.68rem;
+    letter-spacing: 0.06em; cursor: pointer; border-radius: 2px; transition: all 0.2s; white-space: nowrap;
+  }
+  .clear-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  .guess-btn {
+    flex: 1; padding: 9px; background: var(--accent); color: var(--bg); border: none;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.78rem;
+    letter-spacing: 0.15em; font-weight: bold; cursor: pointer; border-radius: 2px; transition: all 0.2s;
+  }
+  .guess-btn:hover:not(:disabled) { background: #00ffd0; box-shadow: 0 0 16px rgba(0,245,196,0.4); }
+  .guess-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+  .error-msg { color: var(--accent2); font-size: 0.63rem; letter-spacing: 0.06em; min-height: 13px; text-align: center; }
+
+  /* ── END OVERLAY ── */
+  .end-overlay {
+    display: none; position: fixed; inset: 0;
+    background: var(--overlay-bg); z-index: 100;
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 12px; text-align: center;
+  }
+  .end-overlay.show { display: flex; }
+  .end-overlay.win { color: var(--accent); }
+  .end-overlay.lose { color: var(--accent2); }
+  .end-big {
+    font-family: 'Zen Dots', cursive; font-size: 3rem; letter-spacing: 0.15em;
+    animation: endPulse 0.9s ease infinite alternate;
+  }
+  @keyframes endPulse {
+    from { filter: drop-shadow(0 0 10px currentColor); }
+    to   { filter: drop-shadow(0 0 30px currentColor) brightness(1.2); }
+  }
+  .end-detail { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.1em; }
+  .end-secret { display: flex; gap: 10px; justify-content: center; }
+  .end-dot { width: 38px; height: 38px; border-radius: 50%; }
+  .restart-btn {
+    margin-top: 6px; padding: 11px 28px; background: transparent;
+    border: 1px solid currentColor; color: inherit;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.8rem;
+    letter-spacing: 0.18em; cursor: pointer; border-radius: 2px; transition: all 0.2s;
+  }
+  .restart-btn:hover { background: rgba(128,128,128,0.1); }
+</style>
+</head>
+<body>
+<nav class="pb-nav">
+  <div class="pb-container pb-nav-inner">
+    <a href="../index.html" class="pb-logo">Play<span>box</span></a>
+    <div class="pb-nav-spacer"></div>
+    <div class="pb-nav-actions">
+      <button class="pb-icon-btn" id="themeBtn" onclick="toggleTheme()" title="テーマ切替">🌤</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <header>
+    <h1>HIT & BLOW</h1>
+    <p class="subtitle">COLOR DEDUCTION GAME</p>
+  </header>
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="diff-group">
+      <button class="seg-btn" data-slots="3">3色</button>
+      <button class="seg-btn active" data-slots="4">4色</button>
+      <button class="seg-btn" data-slots="5">5色</button>
+    </div>
+    <div class="info-chip">残り試行<span id="attemptsLeft">10</span></div>
+    <button class="theme-toggle-btn" id="themeToggle" onclick="toggleTheme()" title="ライト/ダークモード切替">🌙</button>
+    <button class="settings-toggle-btn" id="settingsToggle" onclick="toggleSettings()">⚙ SETTINGS</button>
+  </div>
+
+  <!-- SETTINGS PANEL -->
+  <div class="settings-panel" id="settingsPanel">
+
+    <div class="setting-row">
+      <div class="setting-label">最大試行回数<br><em id="attemptsPreview">10回</em></div>
+      <div class="stepper">
+        <button class="step-btn" onclick="stepAttempts(-1)">−</button>
+        <div class="step-val" id="stepVal">10</div>
+        <button class="step-btn" onclick="stepAttempts(1)">＋</button>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-label">色の重複<br><em id="dupLabel">不可</em></div>
+      <label class="toggle">
+        <input type="checkbox" id="dupToggle" onchange="updateDupLabel()">
+        <div class="toggle-track"></div>
+      </label>
+      <div class="toggle-val" id="dupValLabel">OFF</div>
+    </div>
+
+    <div class="setting-note">
+      ※ 重複 <em>ON</em> にすると同じ色を複数スロットに使えます。<br>
+      ※ 設定変更は「適用」ボタンで新しいゲームに反映されます。
+    </div>
+
+    <button class="apply-btn" onclick="applySettings()">適用して新しいゲーム</button>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-layout">
+    <div class="board-wrap">
+      <div class="board" id="board"></div>
+    </div>
+
+    <div class="controls-panel">
+      <div class="palette-panel">
+        <div class="section-label">▼ COLOR SELECT</div>
+        <div class="palette" id="palette"></div>
+      </div>
+      <div class="action-panel">
+        <div class="legend">
+          <span>HIT</span>：色も位置も正解<br>
+          <em>BLOW</em>：色は正解・位置違い
+        </div>
+        <div class="btn-row">
+          <button class="clear-btn" onclick="clearCurrentCol()">クリア</button>
+          <button class="guess-btn" id="guessBtn" onclick="makeGuess()">GUESS</button>
+        </div>
+        <div class="error-msg" id="errorMsg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- END OVERLAY -->
+<div class="end-overlay" id="endOverlay">
+  <div class="end-big" id="endBig"></div>
+  <div class="end-detail" id="endDetail"></div>
+  <div class="end-secret" id="endSecret"></div>
+  <button class="restart-btn" onclick="restart()">PLAY AGAIN</button>
+</div>
+
+<script>
+const COLORS = [
+  { id: 'blue',   label: '青', hex: '#3b82f6', shadow: 'rgba(59,130,246,0.7)' },
+  { id: 'red',    label: '赤', hex: '#ef4444', shadow: 'rgba(239,68,68,0.7)' },
+  { id: 'green',  label: '緑', hex: '#22c55e', shadow: 'rgba(34,197,94,0.7)' },
+  { id: 'yellow', label: '黄', hex: '#facc15', shadow: 'rgba(250,204,21,0.6)' },
+  { id: 'purple', label: '紫', hex: '#a855f7', shadow: 'rgba(168,85,247,0.7)' },
+  { id: 'white',  label: '白', hex: '#f1f5f9', shadow: 'rgba(241,245,249,0.4)' },
+];
+
+// ── State ──────────────────────────────────────────────
+let slots = 4;
+let maxAttempts = 10;
+let allowDuplicates = false;
+let attempts = 0;
+let secret = [], currentGuess = [], activeSlot = 0, gameOver = false;
+
+// Settings UI state
+let pendingAttempts = 10;
+
+// ── Settings panel ─────────────────────────────────────
+function toggleSettings() {
+  const panel = document.getElementById('settingsPanel');
+  const btn = document.getElementById('settingsToggle');
+  const open = panel.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  // sync stepper display with current value
+  pendingAttempts = maxAttempts;
+  document.getElementById('stepVal').textContent = pendingAttempts;
+  document.getElementById('attemptsPreview').textContent = pendingAttempts + '回';
+  document.getElementById('dupToggle').checked = allowDuplicates;
+  updateDupLabel();
+}
+
+function stepAttempts(delta) {
+  pendingAttempts = Math.max(3, Math.min(20, pendingAttempts + delta));
+  document.getElementById('stepVal').textContent = pendingAttempts;
+  document.getElementById('attemptsPreview').textContent = pendingAttempts + '回';
+}
+
+function updateDupLabel() {
+  const on = document.getElementById('dupToggle').checked;
+  document.getElementById('dupLabel').textContent = on ? '可' : '不可';
+  document.getElementById('dupValLabel').textContent = on ? 'ON' : 'OFF';
+}
+
+function applySettings() {
+  maxAttempts = pendingAttempts;
+  allowDuplicates = document.getElementById('dupToggle').checked;
+  document.getElementById('settingsPanel').classList.remove('open');
+  document.getElementById('settingsToggle').classList.remove('open');
+  restart();
+}
+
+// ── Generate secret ────────────────────────────────────
+function generateSecret(n) {
+  if (allowDuplicates) {
+    return Array.from({ length: n }, () => COLORS[Math.floor(Math.random() * COLORS.length)]);
+  }
+  const pool = [...COLORS], arr = [];
+  for (let i = 0; i < n; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    arr.push(pool.splice(idx, 1)[0]);
+  }
+  return arr;
+}
+
+// ── Build board ────────────────────────────────────────
+function buildBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+
+  for (let s = 0; s < slots; s++) {
+    const row = document.createElement('div');
+    row.className = 'slot-row';
+    const lbl = document.createElement('div');
+    lbl.className = 'row-label';
+    lbl.textContent = s + 1;
+    row.appendChild(lbl);
+    for (let g = 0; g < maxAttempts; g++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.id = `cell-${s}-${g}`;
+      row.appendChild(cell);
+    }
+    board.appendChild(row);
+  }
+
+  const resRow = document.createElement('div');
+  resRow.className = 'result-row';
+  const spacer = document.createElement('div');
+  spacer.className = 'result-row-spacer';
+  resRow.appendChild(spacer);
+  for (let g = 0; g < maxAttempts; g++) {
+    const rc = document.createElement('div');
+    rc.className = 'col-result';
+    rc.id = `result-${g}`;
+    resRow.appendChild(rc);
+  }
+  board.appendChild(resRow);
+
+  refreshCurrentCol();
+}
+
+// ── Refresh current column ─────────────────────────────
+function refreshCurrentCol() {
+  const g = attempts;
+  if (g >= maxAttempts) return;
+  for (let s = 0; s < slots; s++) {
+    const cell = document.getElementById(`cell-${s}-${g}`);
+    if (!cell) continue;
+    const color = currentGuess[s];
+    cell.className = 'cell';
+    cell.onclick = null;
+    cell.style.background = '';
+    cell.style.borderColor = '';
+    cell.style.boxShadow = '';
+
+    if (color) {
+      cell.classList.add('cur-filled');
+      cell.style.background = color.hex;
+      cell.style.borderColor = color.hex;
+      cell.style.boxShadow = `0 0 10px ${color.shadow}`;
+      cell.onclick = () => removeSlot(s);
+    } else if (s === activeSlot) {
+      cell.classList.add('active-cell');
+      cell.onclick = () => { activeSlot = s; refreshCurrentCol(); };
+    } else {
+      cell.classList.add('cur-empty');
+      cell.onclick = () => { activeSlot = s; refreshCurrentCol(); };
+    }
+  }
+}
+
+function removeSlot(s) {
+  currentGuess[s] = null;
+  activeSlot = s;
+  refreshCurrentCol();
+  updatePaletteUsed();
+  document.getElementById('errorMsg').textContent = '';
+}
+
+// ── Palette ────────────────────────────────────────────
+function buildPalette() {
+  const el = document.getElementById('palette');
+  el.innerHTML = '';
+  COLORS.forEach(c => {
+    const chip = document.createElement('div');
+    chip.className = 'color-chip';
+    chip.id = 'chip-' + c.id;
+    chip.dataset.id = c.id;
+    chip.style.cssText = `background:${c.hex};box-shadow:0 2px 10px ${c.shadow}`;
+    chip.title = c.label;
+    const lbl = document.createElement('span');
+    lbl.className = 'chip-label';
+    lbl.textContent = c.label;
+    chip.appendChild(lbl);
+    chip.addEventListener('click', () => selectColor(c));
+    el.appendChild(chip);
+  });
+}
+
+function updatePaletteUsed() {
+  COLORS.forEach(c => {
+    const chip = document.getElementById('chip-' + c.id);
+    if (!chip) return;
+    // When duplicates allowed, never dim palette
+    if (allowDuplicates) {
+      chip.classList.remove('used');
+    } else {
+      chip.classList.toggle('used', currentGuess.some(g => g && g.id === c.id));
+    }
+  });
+}
+
+function selectColor(color) {
+  if (gameOver) return;
+  const chip = document.getElementById('chip-' + color.id);
+  if (!allowDuplicates && chip.classList.contains('used')) return;
+
+  let target = activeSlot;
+  if (currentGuess[target]) {
+    // find next empty
+    target = currentGuess.findIndex(g => !g);
+    if (target === -1) return;
+  }
+  currentGuess[target] = color;
+  document.getElementById('errorMsg').textContent = '';
+  let next = target + 1;
+  while (next < slots && currentGuess[next]) next++;
+  activeSlot = next < slots ? next : target;
+  refreshCurrentCol();
+  updatePaletteUsed();
+}
+
+function clearCurrentCol() {
+  currentGuess = new Array(slots).fill(null);
+  activeSlot = 0;
+  refreshCurrentCol();
+  updatePaletteUsed();
+  document.getElementById('errorMsg').textContent = '';
+}
+
+// ── Make guess ─────────────────────────────────────────
+function makeGuess() {
+  if (gameOver) return;
+  if (!currentGuess.every(Boolean)) {
+    document.getElementById('errorMsg').textContent = '全てのスロットを埋めてください';
+    return;
+  }
+  let hits = 0, blows = 0;
+  // First pass: HITs
+  const secretUsed = new Array(slots).fill(false);
+  const guessUsed  = new Array(slots).fill(false);
+  for (let i = 0; i < slots; i++) {
+    if (currentGuess[i].id === secret[i].id) {
+      hits++;
+      secretUsed[i] = true;
+      guessUsed[i]  = true;
+    }
+  }
+  // Second pass: BLOWs (unmatched positions only)
+  for (let i = 0; i < slots; i++) {
+    if (guessUsed[i]) continue;
+    for (let j = 0; j < slots; j++) {
+      if (secretUsed[j]) continue;
+      if (currentGuess[i].id === secret[j].id) {
+        blows++;
+        secretUsed[j] = true;
+        break;
+      }
+    }
+  }
+
+  for (let s = 0; s < slots; s++) {
+    const cell = document.getElementById(`cell-${s}-${attempts}`);
+    cell.className = 'cell locked';
+    cell.onclick = null;
+  }
+
+  const rc = document.getElementById(`result-${attempts}`);
+  rc.innerHTML = `<span class="h"><b>${hits}</b>H</span><span class="b"><b>${blows}</b>B</span>`;
+
+  attempts++;
+  document.getElementById('attemptsLeft').textContent = maxAttempts - attempts;
+
+  if (hits === slots) { endGame(true); return; }
+  if (attempts >= maxAttempts) { endGame(false); return; }
+
+  currentGuess = new Array(slots).fill(null);
+  activeSlot = 0;
+  updatePaletteUsed();
+  refreshCurrentCol();
+}
+
+// ── End ────────────────────────────────────────────────
+function endGame(won) {
+  gameOver = true;
+  document.getElementById('guessBtn').disabled = true;
+  const ov = document.getElementById('endOverlay');
+  ov.className = 'end-overlay show ' + (won ? 'win' : 'lose');
+  document.getElementById('endBig').textContent = won ? 'CRACKED!' : 'GAME OVER';
+  document.getElementById('endDetail').textContent = won
+    ? `${attempts}回で解読成功！　正解：`
+    : `残念！　正解：`;
+  const sec = document.getElementById('endSecret');
+  sec.innerHTML = '';
+  secret.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'end-dot';
+    d.style.cssText = `background:${c.hex};box-shadow:0 0 14px ${c.shadow}`;
+    d.title = c.label;
+    sec.appendChild(d);
+  });
+}
+
+// ── Restart ────────────────────────────────────────────
+function restart() {
+  attempts = 0; gameOver = false;
+  secret = generateSecret(slots);
+  currentGuess = new Array(slots).fill(null);
+  activeSlot = 0;
+  document.getElementById('attemptsLeft').textContent = maxAttempts;
+  document.getElementById('errorMsg').textContent = '';
+  document.getElementById('guessBtn').disabled = false;
+  document.getElementById('endOverlay').className = 'end-overlay';
+  buildBoard();
+  updatePaletteUsed();
+}
+
+// ── Slot count buttons ─────────────────────────────────
+document.querySelectorAll('.seg-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    slots = parseInt(btn.dataset.slots);
+    // default attempt count per slot size, unless user has set a custom one
+    maxAttempts = slots === 3 ? 8 : slots === 4 ? 10 : 12;
+    pendingAttempts = maxAttempts;
+    document.getElementById('stepVal').textContent = pendingAttempts;
+    document.getElementById('attemptsPreview').textContent = pendingAttempts + '回';
+    restart();
+  });
+});
+
+// ── Theme ──────────────────────────────────────────────
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = isDark ? '🌙' : '🌤';
+  localStorage.setItem('pb-theme', isDark ? 'dark' : 'light');
+}
+
+// ── Sync theme with Playbox localStorage ──────────────
+(function() {
+  const saved = localStorage.getItem('pb-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const dark = saved === 'dark' || (!saved && prefersDark);
+  document.documentElement.classList.toggle('dark', dark);
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = dark ? '🌙' : '🌤';
+})();
+
+// Init
+secret = generateSecret(slots);
+buildPalette();
+buildBoard();
+updatePaletteUsed();
+</script>
+</body>
+</html>
