@@ -95,10 +95,8 @@ body {
   display: flex;
   align-items: center;
   height: 56px;
-  gap: 16px;
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 0 20px;
+  gap: 12px;
+  min-width: 0;
 }
 
 .pb-logo {
@@ -109,6 +107,7 @@ body {
   text-decoration: none;
   letter-spacing: -0.02em;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .pb-logo span {
@@ -120,7 +119,8 @@ body {
 .pb-nav-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 /* ── Icon Button ───────────────────────────────────────── */
@@ -459,9 +459,11 @@ body {
 .pb-fadein-delay-4 { animation-delay: 0.20s; }
 
 /* ── Responsive ────────────────────────────────────────── */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .pb-container { padding: 0 14px; }
-  .pb-nav-inner { height: 50px; }
+  .pb-nav-inner { height: 50px; gap: 8px; padding: 0 12px; }
+  .pb-icon-btn { width: 32px; height: 32px; font-size: 0.85rem; }
+  .pb-btn { padding: 6px 12px; font-size: 0.78rem; }
 }
 
 </style>
@@ -807,7 +809,6 @@ body {
       <button class="seg-btn" data-slots="5">5色</button>
     </div>
     <div class="info-chip">残り試行<span id="attemptsLeft">10</span></div>
-    <button class="theme-toggle-btn" id="themeToggle" onclick="toggleTheme()" title="ライト/ダークモード切替">🌙</button>
     <button class="settings-toggle-btn" id="settingsToggle" onclick="toggleSettings()">⚙ SETTINGS</button>
   </div>
 
