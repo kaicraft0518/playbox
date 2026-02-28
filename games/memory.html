@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>神経衰弱 — Playbox</title>
+<link rel="stylesheet" href="../style.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { overflow-x: hidden; }
+
+  .game-wrap {
+    min-height: calc(100vh - 57px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px 48px;
+  }
+
+  /* ── Header ── */
+  .game-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 900px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .game-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    max-width: 900px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .stat-pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text2);
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .stat-pill b { color: var(--text); font-weight: 500; }
+  .stat-pill.accent b { color: var(--accent); }
+
+  /* ── Board ── */
+  .board-wrap {
+    width: 100%;
+    max-width: 900px;
+    overflow: auto;
+  }
+  .board {
+    display: grid;
+    gap: var(--card-gap, 8px);
+    justify-content: center;
+    padding: 4px;
+    transition: gap 0.2s;
+  }
+
+  /* ── Card ── */
+  .card {
+    width: var(--card-w, 72px);
+    height: var(--card-h, 100px);
+    perspective: 600px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: width 0.2s, height 0.2s;
+  }
+  .card-inner {
+    width: 100%; height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+    border-radius: 6px;
+  }
+  .card.flipped .card-inner,
+  .card.matched .card-inner { transform: rotateY(180deg); }
+
+  .card-face {
+    position: absolute; inset: 0;
+    border-radius: 6px;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--border);
+    user-select: none;
+  }
+
+  /* Back */
+  .card-back {
+    background: var(--accent);
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.05) 0px,
+      rgba(255,255,255,0.05) 2px,
+      transparent 2px,
+      transparent 8px
+    );
+  }
+  :root.dark .card-back {
+    background: #0d2d24;
+    border-color: var(--accent);
+  }
+
+  /* Front */
+  .card-front {
+    background: var(--surface);
+    transform: rotateY(180deg);
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 4px 5px;
+    position: relative;
+  }
+  .card.matched .card-front {
+    background: var(--accent-bg);
+    border-color: var(--accent);
+  }
+
+  .card-corner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.1;
+  }
+  .card-corner.bottom-right {
+    align-self: flex-end;
+    transform: rotate(180deg);
+  }
+  .card-rank {
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    font-size: calc(var(--card-w, 72px) * 0.18);
+    line-height: 1;
+  }
+  .card-suit-corner {
+    font-size: calc(var(--card-w, 72px) * 0.16);
+    line-height: 1;
+  }
+  .card-suit-center {
+    font-size: calc(var(--card-w, 72px) * 0.38);
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .red { color: #dc2626; }
+  .black { color: var(--text); }
+  :root.dark .black { color: #e0e0ff; }
+
+  /* Joker */
+  .joker-label {
+    font-family: 'DM Mono', monospace;
+    font-size: calc(var(--card-w, 72px) * 0.13);
+    color: var(--text2);
+    letter-spacing: 0.05em;
+    text-align: center;
+  }
+
+  /* ── Zoom controls ── */
+  .zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 4px;
+  }
+  .zoom-btn {
+    width: 28px; height: 28px;
+    background: transparent; border: none;
+    color: var(--text2); font-size: 1rem;
+    cursor: pointer; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .zoom-btn:hover { background: var(--accent-bg); color: var(--accent); }
+  .zoom-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text2);
+    min-width: 28px;
+    text-align: center;
+  }
+
+  /* ── Settings panel ── */
+  .settings-panel {
+    width: 100%; max-width: 900px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 14px;
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .settings-panel.open { display: flex; }
+  .settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+  }
+  .setting-item { display: flex; flex-direction: column; gap: 6px; }
+  .setting-item-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--text2);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .setting-item-val {
+    font-size: 0.82rem;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    min-height: 18px;
+  }
+  input[type=range] {
+    width: 100%;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .settings-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* ── Result overlay ── */
+  .result-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: var(--overlay-bg, rgba(245,245,242,0.93));
+    z-index: 100;
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 14px; text-align: center;
+    padding: 20px;
+  }
+  .result-overlay.show { display: flex; }
+  .result-emoji { font-size: 3.5rem; }
+  .result-title {
+    font-family: 'Fraunces', serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes popIn {
+    from { transform: scale(0.7); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+  .result-stats {
+    display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+  }
+  .result-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 20px;
+    text-align: center;
+  }
+  .result-stat-val {
+    font-family: 'Fraunces', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .result-stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text2);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .result-best {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+  }
+</style>
+</head>
+<body>
+
+<nav class="pb-nav">
+  <div class="pb-container pb-nav-inner">
+    <a href="../index.html" class="pb-logo">Play<span>box</span></a>
+    <div class="pb-nav-spacer"></div>
+    <div class="pb-nav-actions">
+      <button class="pb-icon-btn" id="themeBtn" onclick="toggleTheme()" title="テーマ切替">🌤</button>
+    </div>
+  </div>
+</nav>
+
+<div class="game-wrap">
+
+  <!-- Header -->
+  <div class="game-header">
+    <div class="game-title">神経衰弱</div>
+    <div class="header-actions">
+      <!-- Zoom -->
+      <div class="zoom-controls">
+        <button class="zoom-btn" onclick="zoom(-1)">−</button>
+        <span class="zoom-val" id="zoomVal">100%</span>
+        <button class="zoom-btn" onclick="zoom(1)">＋</button>
+      </div>
+      <button class="pb-icon-btn" id="settingsToggle" onclick="toggleSettings()" title="設定">⚙</button>
+      <button class="pb-btn primary" onclick="startGame()">▶ 新しいゲーム</button>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="settings-panel" id="settingsPanel">
+    <div class="settings-grid">
+
+      <div class="setting-item">
+        <div class="setting-item-label">列数</div>
+        <input type="range" id="colsRange" min="2" max="13" value="4" oninput="updateSettingPreview()">
+        <div class="setting-item-val" id="colsVal">4列</div>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-item-label">行数</div>
+        <input type="range" id="rowsRange" min="2" max="8" value="4" oninput="updateSettingPreview()">
+        <div class="setting-item-val" id="rowsVal">4行</div>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-item-label">ジョーカー</div>
+        <div style="display:flex; align-items:center; gap:10px; margin-top:4px;">
+          <label class="pb-toggle">
+            <input type="checkbox" id="jokerToggle" onchange="updateSettingPreview()">
+            <div class="pb-toggle-track"></div>
+          </label>
+          <span class="setting-item-val" id="jokerVal">なし</span>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-item-label">カード枚数プレビュー</div>
+        <div class="setting-item-val" id="cardCountVal">16枚（8ペア）</div>
+        <div style="font-size:0.65rem; color:var(--text2); margin-top:2px;" id="cardWarning"></div>
+      </div>
+
+    </div>
+    <div class="settings-actions">
+      <button class="pb-btn" onclick="toggleSettings()">キャンセル</button>
+      <button class="pb-btn primary" onclick="applySettings()">適用して開始</button>
+    </div>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="stats-bar">
+    <div class="stat-pill">試行 <b id="statTries">0</b></div>
+    <div class="stat-pill">ペア <b id="statPairs">0</b> / <b id="statTotal">8</b></div>
+    <div class="stat-pill">時間 <b id="statTime">0:00</b></div>
+    <div class="stat-pill accent">Best <b id="statBest">—</b></div>
+  </div>
+
+  <!-- Board -->
+  <div class="board-wrap">
+    <div class="board" id="board"></div>
+  </div>
+
+</div>
+
+<!-- Result overlay -->
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-emoji">🎉</div>
+  <div class="result-title">クリア！</div>
+  <div class="result-stats">
+    <div class="result-stat">
+      <div class="result-stat-val" id="resTries">—</div>
+      <div class="result-stat-label">試行回数</div>
+    </div>
+    <div class="result-stat">
+      <div class="result-stat-val" id="resTime">—</div>
+      <div class="result-stat-label">クリアタイム</div>
+    </div>
+  </div>
+  <div class="result-best" id="resBest"></div>
+  <div style="display:flex;gap:8px;margin-top:8px;">
+    <button class="pb-btn" onclick="document.getElementById('resultOverlay').classList.remove('show')">閉じる</button>
+    <button class="pb-btn primary" onclick="startGame(); document.getElementById('resultOverlay').classList.remove('show')">もう一度</button>
+  </div>
+</div>
+
+<script>
+// ── Card data ──────────────────────────────────────────
+const SUITS = [
+  { sym: '♠', label: 'spade',   color: 'black' },
+  { sym: '♥', label: 'heart',   color: 'red'   },
+  { sym: '♦', label: 'diamond', color: 'red'   },
+  { sym: '♣', label: 'club',    color: 'black' },
+];
+const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
+// Build full 52-card deck + optional jokers
+function buildDeck(jokers = false) {
+  const deck = [];
+  for (const suit of SUITS) {
+    for (const rank of RANKS) {
+      deck.push({ id: `${rank}${suit.label}`, rank, suit });
+    }
+  }
+  if (jokers) {
+    deck.push({ id: 'joker1', rank: 'JK', suit: { sym: '🃏', label: 'joker', color: 'black' } });
+    deck.push({ id: 'joker2', rank: 'JK', suit: { sym: '🃏', label: 'joker', color: 'red'   } });
+  }
+  return deck;
+}
+
+// ── Settings ───────────────────────────────────────────
+let cfg = { cols: 4, rows: 4, jokers: false };
+
+function updateSettingPreview() {
+  const cols   = parseInt(document.getElementById('colsRange').value);
+  const rows   = parseInt(document.getElementById('rowsRange').value);
+  const jokers = document.getElementById('jokerToggle').checked;
+  const total  = cols * rows;
+  const maxCards = 52 + (jokers ? 2 : 0);
+
+  document.getElementById('colsVal').textContent  = cols + '列';
+  document.getElementById('rowsVal').textContent  = rows + '行';
+  document.getElementById('jokerVal').textContent = jokers ? 'あり' : 'なし';
+
+  const warn = document.getElementById('cardWarning');
+  if (total % 2 !== 0) {
+    document.getElementById('cardCountVal').textContent = `${total}枚（奇数のためペア不可）`;
+    warn.textContent = '⚠ 偶数になるよう調整してください';
+  } else if (total > maxCards) {
+    document.getElementById('cardCountVal').textContent = `${total}枚（上限${maxCards}枚超過）`;
+    warn.textContent = `⚠ デッキ上限は${maxCards}枚です`;
+  } else {
+    document.getElementById('cardCountVal').textContent = `${total}枚（${total/2}ペア）`;
+    warn.textContent = '';
+  }
+}
+
+function toggleSettings() {
+  const panel = document.getElementById('settingsPanel');
+  const btn   = document.getElementById('settingsToggle');
+  const open  = panel.classList.toggle('open');
+  btn.classList.toggle('active', open);
+  if (open) updateSettingPreview();
+}
+
+function applySettings() {
+  const cols   = parseInt(document.getElementById('colsRange').value);
+  const rows   = parseInt(document.getElementById('rowsRange').value);
+  const jokers = document.getElementById('jokerToggle').checked;
+  const total  = cols * rows;
+  const maxCards = 52 + (jokers ? 2 : 0);
+  if (total % 2 !== 0 || total > maxCards) return;
+  cfg = { cols, rows, jokers };
+  document.getElementById('settingsPanel').classList.remove('open');
+  document.getElementById('settingsToggle').classList.remove('active');
+  startGame();
+}
+
+// ── Zoom ───────────────────────────────────────────────
+const ZOOM_LEVELS = [50, 65, 80, 100, 120, 140, 160];
+let zoomIdx = 3; // default 100%
+
+function zoom(delta) {
+  zoomIdx = Math.max(0, Math.min(ZOOM_LEVELS.length - 1, zoomIdx + delta));
+  applyZoom();
+}
+
+function applyZoom() {
+  const pct = ZOOM_LEVELS[zoomIdx];
+  const base_w = 72, base_h = 100, base_gap = 8;
+  const w   = Math.round(base_w   * pct / 100);
+  const h   = Math.round(base_h   * pct / 100);
+  const gap = Math.round(base_gap * pct / 100);
+  document.documentElement.style.setProperty('--card-w',   w   + 'px');
+  document.documentElement.style.setProperty('--card-h',   h   + 'px');
+  document.documentElement.style.setProperty('--card-gap', gap + 'px');
+  document.getElementById('zoomVal').textContent = pct + '%';
+}
+
+// ── Game state ─────────────────────────────────────────
+let cards = [];       // { id, rank, suit, el, flipped, matched }
+let flipped = [];     // currently face-up (max 2)
+let tries = 0;
+let matchedPairs = 0;
+let totalPairs = 0;
+let locked = false;
+let timerInterval = null;
+let elapsedSec = 0;
+let bestRecord = null; // { tries, time }
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function startGame() {
+  clearInterval(timerInterval);
+  elapsedSec = 0;
+  tries = 0;
+  matchedPairs = 0;
+  flipped = [];
+  locked = false;
+
+  // Build card pairs
+  const deck    = buildDeck(cfg.jokers);
+  const needed  = cfg.cols * cfg.rows / 2;
+  const selected = shuffle(deck).slice(0, needed);
+  const pairs   = shuffle([...selected, ...selected.map(c => ({ ...c }))]);
+  totalPairs    = needed;
+
+  // Update stats
+  document.getElementById('statTries').textContent  = 0;
+  document.getElementById('statPairs').textContent  = 0;
+  document.getElementById('statTotal').textContent  = totalPairs;
+  document.getElementById('statTime').textContent   = '0:00';
+  updateBestDisplay();
+
+  // Render board
+  renderBoard(pairs);
+
+  // Start timer
+  timerInterval = setInterval(() => {
+    elapsedSec++;
+    document.getElementById('statTime').textContent = formatTime(elapsedSec);
+  }, 1000);
+}
+
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+// ── Board render ───────────────────────────────────────
+function renderBoard(pairs) {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  board.style.gridTemplateColumns = `repeat(${cfg.cols}, var(--card-w, 72px))`;
+  cards = [];
+
+  pairs.forEach((cardData, i) => {
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.innerHTML = buildCardHTML(cardData);
+    el.addEventListener('click', () => onCardClick(i));
+    board.appendChild(el);
+
+    cards.push({ ...cardData, el, flipped: false, matched: false });
+  });
+}
+
+function buildCardHTML(c) {
+  const isJoker  = c.suit.label === 'joker';
+  const colorCls = c.suit.color;
+
+  if (isJoker) {
+    return `
+      <div class="card-inner">
+        <div class="card-face card-back"></div>
+        <div class="card-face card-front">
+          <div class="card-corner">
+            <span class="card-rank ${colorCls}">JK</span>
+          </div>
+          <div class="card-suit-center">${c.suit.sym}</div>
+          <div class="joker-label ${colorCls}">JOKER</div>
+          <div class="card-corner bottom-right">
+            <span class="card-rank ${colorCls}">JK</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="card-inner">
+      <div class="card-face card-back"></div>
+      <div class="card-face card-front">
+        <div class="card-corner">
+          <span class="card-rank ${colorCls}">${c.rank}</span>
+          <span class="card-suit-corner ${colorCls}">${c.suit.sym}</span>
+        </div>
+        <div class="card-suit-center ${colorCls}">${c.suit.sym}</div>
+        <div class="card-corner bottom-right">
+          <span class="card-rank ${colorCls}">${c.rank}</span>
+          <span class="card-suit-corner ${colorCls}">${c.suit.sym}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── Card click ─────────────────────────────────────────
+function onCardClick(i) {
+  const card = cards[i];
+  if (locked || card.flipped || card.matched) return;
+
+  card.flipped = true;
+  card.el.classList.add('flipped');
+  flipped.push(i);
+
+  if (flipped.length === 2) {
+    locked = true;
+    tries++;
+    document.getElementById('statTries').textContent = tries;
+    checkMatch();
+  }
+}
+
+function checkMatch() {
+  const [a, b] = flipped.map(i => cards[i]);
+  const isMatch = a.id === b.id;
+
+  setTimeout(() => {
+    if (isMatch) {
+      a.el.classList.add('matched');
+      b.el.classList.add('matched');
+      a.matched = b.matched = true;
+      matchedPairs++;
+      document.getElementById('statPairs').textContent = matchedPairs;
+
+      if (matchedPairs === totalPairs) {
+        clearInterval(timerInterval);
+        setTimeout(showResult, 500);
+      }
+    } else {
+      a.el.classList.remove('flipped');
+      b.el.classList.remove('flipped');
+      a.flipped = b.flipped = false;
+    }
+    flipped = [];
+    locked  = false;
+  }, isMatch ? 400 : 900);
+}
+
+// ── Result ─────────────────────────────────────────────
+function showResult() {
+  const isNewBest = !bestRecord
+    || tries < bestRecord.tries
+    || (tries === bestRecord.tries && elapsedSec < bestRecord.time);
+
+  if (isNewBest) {
+    bestRecord = { tries, time: elapsedSec, pairs: totalPairs };
+    saveBest();
+  }
+
+  document.getElementById('resTries').textContent = tries + '回';
+  document.getElementById('resTime').textContent  = formatTime(elapsedSec);
+  document.getElementById('resBest').textContent  = isNewBest
+    ? '🏆 新記録！'
+    : `ベスト：${bestRecord.tries}回 / ${formatTime(bestRecord.time)}`;
+
+  document.getElementById('resultOverlay').classList.add('show');
+  updateBestDisplay();
+}
+
+function updateBestDisplay() {
+  const el = document.getElementById('statBest');
+  if (bestRecord && bestRecord.pairs === totalPairs) {
+    el.textContent = `${bestRecord.tries}回 ${formatTime(bestRecord.time)}`;
+  } else {
+    el.textContent = '—';
+  }
+}
+
+// ── Persist best ───────────────────────────────────────
+function saveBest() {
+  localStorage.setItem('pb-memory-best', JSON.stringify(bestRecord));
+}
+function loadBest() {
+  const s = localStorage.getItem('pb-memory-best');
+  if (s) bestRecord = JSON.parse(s);
+}
+
+// ── Theme ──────────────────────────────────────────────
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  document.getElementById('themeBtn').textContent = isDark ? '🌙' : '🌤';
+  localStorage.setItem('pb-theme', isDark ? 'dark' : 'light');
+}
+
+// ── Init ───────────────────────────────────────────────
+(function() {
+  const saved = localStorage.getItem('pb-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const dark = saved === 'dark' || (!saved && prefersDark);
+  document.documentElement.classList.toggle('dark', dark);
+  document.getElementById('themeBtn').textContent = dark ? '🌙' : '🌤';
+
+  loadBest();
+  applyZoom();
+  startGame();
+})();
+</script>
+</body>
+</html>
