@@ -47,6 +47,11 @@
   }
   @media (max-width: 500px) {
     .toolbar { flex-direction: column; align-items: flex-start; }
+    .pb-list-row .pb-tag { display: none; }
+    .game-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  }
+  @media (min-width: 501px) and (max-width: 768px) {
+    .game-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
   }
   .toolbar-left {
     font-family: 'DM Mono', monospace;
@@ -59,7 +64,7 @@
   /* ── Card Grid ── */
   .game-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 16px;
     margin-bottom: 48px;
   }
@@ -210,7 +215,7 @@
     <!-- Toolbar -->
     <div class="toolbar pb-fadein pb-fadein-delay-1">
       <div class="toolbar-left">
-        <span id="gameCount">9</span> GAMES
+        <span id="gameCount">10</span> GAMES
       </div>
       <div class="pb-seg" style="width:auto;">
         <button class="pb-seg-btn active" id="toolViewCardBtn" onclick="setView('card')">⊞ カード</button>
@@ -397,6 +402,37 @@
         </div>
       </a>
 
+      <!-- マンカラ -->
+      <a href="games/mancala.html" class="pb-card pb-fadein">
+        <div class="pb-card-thumb" style="background:linear-gradient(135deg,#fef3c7,#fde68a);">
+          <div style="display:flex;gap:5px;align-items:center;">
+            <div style="width:18px;height:24px;border-radius:9px;background:#d97706;opacity:0.9;display:flex;align-items:center;justify-content:center;font-size:0.5rem;color:white;font-weight:700;">4</div>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <div style="display:flex;gap:3px;">
+                <div style="width:14px;height:14px;border-radius:50%;background:#f59e0b;"></div>
+                <div style="width:14px;height:14px;border-radius:50%;background:#f59e0b;"></div>
+                <div style="width:14px;height:14px;border-radius:50%;background:#f59e0b;"></div>
+              </div>
+              <div style="display:flex;gap:3px;">
+                <div style="width:14px;height:14px;border-radius:50%;background:#d97706;"></div>
+                <div style="width:14px;height:14px;border-radius:50%;background:#d97706;"></div>
+                <div style="width:14px;height:14px;border-radius:50%;background:#d97706;"></div>
+              </div>
+            </div>
+            <div style="width:18px;height:24px;border-radius:9px;background:#92400e;opacity:0.9;display:flex;align-items:center;justify-content:center;font-size:0.5rem;color:white;font-weight:700;">4</div>
+          </div>
+        </div>
+        <div class="pb-card-body">
+          <div class="pb-card-title">マンカラ</div>
+          <div class="pb-card-desc">石を穴に配るアフリカ発祥のボードゲーム。CPU対戦（5段階）と2人対戦に対応。</div>
+          <div class="pb-card-tags">
+            <span class="pb-tag">ボードゲーム</span>
+            <span class="pb-tag">CPU対戦</span>
+            <span class="pb-tag">2人</span>
+          </div>
+        </div>
+      </a>
+
     </div>
 
     <!-- List View -->
@@ -500,6 +536,16 @@
         <div class="pb-list-info">
           <div class="pb-list-title">オセロ</div>
           <div class="pb-list-desc">CPU対戦（5段階）と2人対戦に対応。盤面をひっくり返して枚数を競え。</div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0;"><span class="pb-tag">ボードゲーム</span></div>
+        <span class="pb-list-arrow">→</span>
+      </a>
+
+      <a href="games/mancala.html" class="pb-list-row pb-fadein">
+        <div class="pb-list-icon" style="background:linear-gradient(135deg,#fef3c7,#fde68a);">🪨</div>
+        <div class="pb-list-info">
+          <div class="pb-list-title">マンカラ</div>
+          <div class="pb-list-desc">石を穴に配るアフリカ発祥のボードゲーム。CPU対戦（5段階）と2人対戦に対応。</div>
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0;"><span class="pb-tag">ボードゲーム</span></div>
         <span class="pb-list-arrow">→</span>
