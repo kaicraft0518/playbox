@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ブロック崩し — Playbox</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f5f5f2; --surface:#ffffff; --surface2:#f0f0ec;
+  --border:#e2e2dc; --text:#1a1a18; --text2:#6b6b63;
+  --accent:#2a6b52; --accent-bg:rgba(42,107,82,0.08);
+  --accent2:#c0392b; --shadow:0 2px 12px rgba(0,0,0,0.07);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.10);
+  --radius:10px; --radius-sm:6px; --transition:0.2s ease;
+}
+:root.dark {
+  --bg:#0a0a0f; --surface:#0f0f1a; --surface2:#15151f;
+  --border:#1e1e3a; --text:#e0e0ff; --text2:#5a5a8a;
+  --accent:#00c49a; --accent-bg:rgba(0,196,154,0.08);
+  --accent2:#ff3c6e; --shadow:0 2px 12px rgba(0,0,0,0.3);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.4);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;transition:background var(--transition),color var(--transition);touch-action:none;user-select:none;}
+.pb-nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--border);}
+.pb-nav-inner{display:flex;align-items:center;height:56px;gap:12px;max-width:960px;margin:0 auto;padding:0 20px;min-width:0;}
+.pb-logo{font-family:'Fraunces',serif;font-weight:700;font-size:1.25rem;color:var(--text);text-decoration:none;letter-spacing:-0.02em;white-space:nowrap;}
+.pb-logo span{color:var(--accent);}
+.pb-nav-spacer{flex:1;}
+.pb-icon-btn{width:36px;height:36px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.9rem;transition:all var(--transition);flex-shrink:0;}
+.pb-icon-btn:hover{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
+.pb-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:500;cursor:pointer;transition:all var(--transition);white-space:nowrap;}
+.pb-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg);}
+.pb-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.pb-btn.primary:hover{opacity:0.88;}
+
+/* Layout */
+.game-wrap{display:flex;flex-direction:column;align-items:center;padding:16px 16px 48px;}
+
+/* ── MODE SELECT SCREEN ── */
+.mode-screen{width:100%;max-width:480px;display:flex;flex-direction:column;align-items:center;gap:20px;padding:20px 0;}
+.mode-title{font-family:'Fraunces',serif;font-size:2.2rem;font-weight:700;letter-spacing:-0.03em;color:var(--text);text-align:center;}
+.mode-title span{color:var(--accent);}
+.mode-subtitle{font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--text2);letter-spacing:0.15em;text-transform:uppercase;}
+.mode-cards{display:flex;flex-direction:column;gap:12px;width:100%;}
+.mode-card{
+  background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);
+  padding:20px;cursor:pointer;transition:all var(--transition);text-align:left;
+  display:flex;gap:16px;align-items:center;
+}
+.mode-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow-lg);}
+.mode-card-icon{font-size:2.4rem;flex-shrink:0;}
+.mode-card-text{}
+.mode-card-title{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:4px;}
+.mode-card-desc{font-size:0.78rem;color:var(--text2);line-height:1.5;}
+.mode-card-tags{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;}
+.mode-tag{font-family:'DM Mono',monospace;font-size:0.6rem;padding:2px 8px;border-radius:20px;border:1px solid var(--border);color:var(--text2);}
+
+/* ── GAME SCREEN ── */
+.game-screen{width:100%;max-width:480px;display:none;flex-direction:column;align-items:center;gap:10px;}
+
+/* HUD */
+.hud{display:flex;gap:8px;width:100%;flex-wrap:wrap;}
+.hud-pill{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text2);display:flex;align-items:center;gap:5px;}
+.hud-pill b{color:var(--text);font-weight:500;}
+.hud-pill.accent b{color:var(--accent);}
+.hud-spacer{flex:1;}
+
+/* Canvas */
+.canvas-wrap{position:relative;width:100%;border-radius:12px;overflow:hidden;box-shadow:var(--shadow-lg);border:1px solid var(--border);}
+canvas{display:block;width:100%;height:auto;}
+
+/* Overlay */
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;background:rgba(245,245,242,0.93);backdrop-filter:blur(4px);}
+:root.dark .overlay{background:rgba(10,10,15,0.93);}
+.overlay.hidden{display:none;}
+.ov-emoji{font-size:2.8rem;}
+.ov-title{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:700;letter-spacing:-0.02em;color:var(--text);}
+.ov-title.win{color:var(--accent);}
+.ov-title.lose{color:var(--accent2);}
+.ov-sub{font-size:0.8rem;color:var(--text2);font-family:'DM Mono',monospace;letter-spacing:0.06em;line-height:1.7;}
+.ov-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+
+/* Powerup legend */
+.pu-legend{width:100%;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.pu-item{font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--text2);display:flex;align-items:center;gap:4px;}
+
+/* PU legend box */
+.pu-legend-box{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;}
+.pu-legend-title{font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--text2);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px;}
+.pu-legend-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:7px;}
+.pu-legend-item{display:flex;align-items:center;gap:8px;}
+.pu-pill{display:inline-block;font-family:'DM Mono',monospace;font-size:0.62rem;font-weight:700;color:#fff;padding:2px 9px;border-radius:20px;white-space:nowrap;min-width:44px;text-align:center;}
+.pu-legend-desc{font-size:0.72rem;color:var(--text2);}
+
+/* Mobile controls */
+.mobile-ctrl{display:none;gap:10px;margin-top:4px;}
+@media (pointer:coarse){.mobile-ctrl{display:flex;}}
+.ctrl-btn{flex:1;height:48px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:1.4rem;cursor:pointer;transition:all 0.1s;-webkit-tap-highlight-color:transparent;}
+.ctrl-btn:active{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
+</style>
+</head>
+<body>
+
+<nav class="pb-nav">
+  <div class="pb-nav-inner">
+    <a href="../index.html" class="pb-logo">Play<span>box</span></a>
+    <div class="pb-nav-spacer"></div>
+    <button class="pb-icon-btn" id="themeBtn" onclick="toggleTheme()">🌤</button>
+  </div>
+</nav>
+
+<div class="game-wrap">
+
+  <!-- MODE SELECT -->
+  <div class="mode-screen" id="modeScreen">
+    <div class="mode-title">ブロック<span>崩し</span></div>
+    <div class="mode-subtitle">モードを選んでください</div>
+    <div class="mode-cards">
+      <div class="mode-card" onclick="startMode('endless')">
+        <div class="mode-card-icon">♾️</div>
+        <div class="mode-card-text">
+          <div class="mode-card-title">エンドレス</div>
+          <div class="mode-card-desc">ミスしたらゲームオーバー。ブロックは無限に続く。どこまでスコアを伸ばせるか挑戦。</div>
+          <div class="mode-card-tags">
+            <span class="mode-tag">1ミス終了</span>
+            <span class="mode-tag">スコアアタック</span>
+          </div>
+        </div>
+      </div>
+      <div class="mode-card" onclick="startMode('stage')">
+        <div class="mode-card-icon">🎯</div>
+        <div class="mode-card-text">
+          <div class="mode-card-title">ステージモード</div>
+          <div class="mode-card-desc">全5ステージをクリアしよう。残機3でスタート。パワーアップを活用して全面クリアを目指せ。</div>
+          <div class="mode-card-tags">
+            <span class="mode-tag">残機3</span>
+            <span class="mode-tag">全5ステージ</span>
+            <span class="mode-tag">パワーアップ</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div class="game-screen" id="gameScreen">
+    <div class="hud" id="hud">
+      <div class="hud-pill">スコア <b id="hudScore">0</b></div>
+      <div class="hud-pill" id="hudLivesWrap">残機 <b id="hudLives">—</b></div>
+      <div class="hud-pill" id="hudStageWrap">ステージ <b id="hudStage">—</b></div>
+      <div class="hud-pill accent">Best <b id="hudBest">0</b></div>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="canvas"></canvas>
+      <div class="overlay hidden" id="overlay">
+        <div class="ov-emoji" id="ovEmoji"></div>
+        <div class="ov-title" id="ovTitle"></div>
+        <div class="ov-sub" id="ovSub"></div>
+        <div class="ov-btns" id="ovBtns"></div>
+      </div>
+    </div>
+    <div class="pu-legend-box">
+      <div class="pu-legend-title">パワーアップ一覧</div>
+      <div class="pu-legend-grid">
+        <div class="pu-legend-item"><span class="pu-pill" style="background:#3b82f6">拡大</span><span class="pu-legend-desc">パドルが広くなる</span></div>
+        <div class="pu-legend-item"><span class="pu-pill" style="background:#f59e0b">スロー</span><span class="pu-legend-desc">ボールが遅くなる</span></div>
+        <div class="pu-legend-item"><span class="pu-pill" style="background:#ef4444">レーザー</span><span class="pu-legend-desc">レーザーが自動発射</span></div>
+        <div class="pu-legend-item"><span class="pu-pill" style="background:#8b5cf6">多重球</span><span class="pu-legend-desc">ボールが2つ増える</span></div>
+        <div class="pu-legend-item"><span class="pu-pill" style="background:#ec4899">縮小</span><span class="pu-legend-desc">⚠ パドルが狭くなる</span></div>
+      </div>
+    </div>
+    <div class="mobile-ctrl">
+      <button class="ctrl-btn" id="leftBtn">◀</button>
+      <button class="ctrl-btn" id="rightBtn">▶</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════
+const CW = 400, CH = 500;
+const PADDLE_Y = CH - 40;
+const BALL_R   = 6;
+const PU_R     = 8;
+const BRICK_ROWS = 6, BRICK_COLS = 10;
+const BRICK_W = CW / BRICK_COLS, BRICK_H = 18;
+const BRICK_TOP = 60;
+
+// Powerup types
+const PU_TYPES = {
+  WIDE:   { color:'#3b82f6', label:'拡大', duration:8000 },
+  SLOW:   { color:'#f59e0b', label:'スロー', duration:6000 },
+  LASER:  { color:'#ef4444', label:'レーザー', duration:5000 },
+  MULTI:  { color:'#8b5cf6', label:'多重球', duration:0 },
+  NARROW: { color:'#ec4899', label:'縮小', duration:6000 },
+};
+const PU_KEYS = Object.keys(PU_TYPES);
+
+// Stage layouts (0=empty,1-4=brick HP, P=powerup brick)
+const STAGES = [
+  // Stage 1 — simple rows
+  () => genStage(1, 4, 1),
+  // Stage 2 — checkerboard
+  () => genStage(2, 5, 2),
+  // Stage 3 — diamond
+  () => genStageDiamond(),
+  // Stage 4 — fortress
+  () => genStageFortress(),
+  // Stage 5 — full
+  () => genStage(5, 6, 3),
+];
+
+function genStage(rows, cols, maxHp) {
+  const grid = [];
+  for (let r = 0; r < BRICK_ROWS; r++) {
+    const row = [];
+    for (let c = 0; c < BRICK_COLS; c++) {
+      if (r < rows) {
+        const hp = Math.min(maxHp, Math.floor(Math.random() * maxHp) + 1);
+        row.push({ hp, maxHp, pu: Math.random() < 0.12 });
+      } else {
+        row.push(null);
+      }
+    }
+    grid.push(row);
+  }
+  return grid;
+}
+
+function genStageDiamond() {
+  const grid = Array.from({length: BRICK_ROWS}, () => Array(BRICK_COLS).fill(null));
+  const mid = Math.floor(BRICK_COLS / 2);
+  for (let r = 0; r < BRICK_ROWS; r++) {
+    const spread = r < BRICK_ROWS/2 ? r+1 : BRICK_ROWS-r;
+    for (let c = mid - spread; c <= mid + spread; c++) {
+      if (c >= 0 && c < BRICK_COLS) {
+        grid[r][c] = { hp: 2, maxHp: 2, pu: Math.random() < 0.1 };
+      }
+    }
+  }
+  return grid;
+}
+
+function genStageFortress() {
+  const grid = Array.from({length: BRICK_ROWS}, () => Array(BRICK_COLS).fill(null));
+  for (let r = 0; r < BRICK_ROWS; r++) {
+    for (let c = 0; c < BRICK_COLS; c++) {
+      const isEdge = r === 0 || r === BRICK_ROWS-1 || c === 0 || c === BRICK_COLS-1;
+      const isMid  = r === 2 && c >= 3 && c <= 6;
+      if (isEdge) grid[r][c] = { hp: 3, maxHp: 3, pu: false };
+      else if (isMid) grid[r][c] = { hp: 2, maxHp: 2, pu: true };
+    }
+  }
+  return grid;
+}
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let mode = null; // 'endless' | 'stage'
+let gameState = 'idle'; // idle|running|paused|over|win|stageclear
+let score = 0, lives = 3, stageIdx = 0;
+let best = parseInt(localStorage.getItem('pb-breakout-best') || '0');
+
+let bricks = [];
+let balls  = [];
+let paddle = { x: CW/2, w: 80, speed: 0 };
+let powerups = [];
+let lasers   = [];
+let activePU = {}; // type → expiry timestamp
+let puTimers = {};
+let laserLastFire = 0;
+
+// ═══════════════════════════════════════════════════════
+// CANVAS
+// ═══════════════════════════════════════════════════════
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+canvas.width  = CW;
+canvas.height = CH;
+
+function colors() {
+  const dark = document.documentElement.classList.contains('dark');
+  return {
+    bg:       dark ? '#0a0a0f' : '#f8f8f5',
+    surface:  dark ? '#0f0f1a' : '#ffffff',
+    border:   dark ? '#1e1e3a' : '#e2e2dc',
+    text:     dark ? '#e0e0ff' : '#1a1a18',
+    text2:    dark ? '#5a5a8a' : '#6b6b63',
+    accent:   dark ? '#00c49a' : '#2a6b52',
+    accent2:  dark ? '#ff3c6e' : '#c0392b',
+    paddle:   dark ? '#00c49a' : '#2a6b52',
+    ball:     dark ? '#e0e0ff' : '#1a1a18',
+    ballGlow: dark ? 'rgba(224,224,255,0.3)' : 'rgba(26,26,24,0.15)',
+  };
+}
+
+const BRICK_COLORS = [
+  ['#ef4444','#dc2626'], // HP1 (red)
+  ['#f97316','#ea580c'], // HP2 (orange)
+  ['#eab308','#ca8a04'], // HP3 (yellow)
+];
+const BRICK_COLORS_DARK = [
+  ['#7f1d1d','#991b1b'],
+  ['#7c2d12','#9a3412'],
+  ['#713f12','#854d0e'],
+];
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+function startMode(m) {
+  mode = m;
+  document.getElementById('modeScreen').style.display = 'none';
+  const gs = document.getElementById('gameScreen');
+  gs.style.display = 'flex';
+
+  if (m === 'endless') {
+    document.getElementById('hudLivesWrap').style.display = 'none';
+    document.getElementById('hudStageWrap').style.display = 'none';
+  } else {
+    document.getElementById('hudLivesWrap').style.display = '';
+    document.getElementById('hudStageWrap').style.display = '';
+  }
+
+  score = 0; lives = 3; stageIdx = 0;
+  initRound();
+}
+
+function initRound() {
+  balls    = [newBall()];
+  powerups = [];
+  lasers   = [];
+  activePU = {};
+  Object.values(puTimers).forEach(clearTimeout);
+  puTimers = {};
+  laserLastFire = 0;
+  paddle   = { x: CW/2, w: 80, speed: 0 };
+
+  if (mode === 'endless') {
+    bricks = genStage(BRICK_ROWS, BRICK_COLS, Math.min(3, 1 + Math.floor(score/500)));
+  } else {
+    bricks = STAGES[stageIdx]();
+  }
+
+  updateHUD();
+  showOverlay('🎯', mode === 'stage' ? `ステージ ${stageIdx+1}` : 'エンドレス',
+    'クリックまたはタップでスタート', [
+      { label: '▶ スタート', fn: 'resumeGame()' },
+      { label: '← モード選択', fn: 'toModeSelect()' },
+    ]);
+  gameState = 'idle';
+  draw();
+}
+
+function newBall() {
+  const angle = -Math.PI/2 + (Math.random()-0.5) * 0.6;
+  const spd = 3.5 + (mode === 'endless' ? Math.floor(score/300)*0.2 : stageIdx*0.3);
+  return { x: CW/2, y: PADDLE_Y - BALL_R - 2, vx: Math.cos(angle)*spd, vy: Math.sin(angle)*spd };
+}
+
+function updateHUD() {
+  document.getElementById('hudScore').textContent = score;
+  document.getElementById('hudLives').textContent = '❤️'.repeat(lives);
+  document.getElementById('hudStage').textContent = stageIdx + 1;
+  document.getElementById('hudBest').textContent  = best;
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME LOOP
+// ═══════════════════════════════════════════════════════
+let raf = null;
+let lastTime = 0;
+
+function resumeGame() {
+  hideOverlay();
+  gameState = 'running';
+  lastTime = performance.now();
+  if (raf) cancelAnimationFrame(raf);
+  raf = requestAnimationFrame(loop);
+}
+
+function loop(ts) {
+  if (gameState !== 'running') return;
+  const dt = Math.min(ts - lastTime, 32);
+  lastTime = ts;
+  update(dt);
+  draw();
+  raf = requestAnimationFrame(loop);
+}
+
+// ═══════════════════════════════════════════════════════
+// UPDATE
+// ═══════════════════════════════════════════════════════
+function update(dt) {
+  const spd = 0.35;
+
+  // Paddle input
+  if (keys.left)  paddle.x -= 5;
+  if (keys.right) paddle.x += 5;
+  paddle.x = Math.max(paddle.w/2, Math.min(CW - paddle.w/2, paddle.x));
+
+  // Balls
+  const slowMul = activePU.SLOW ? 0.55 : 1;
+  balls.forEach(b => {
+    b.x += b.vx * slowMul;
+    b.y += b.vy * slowMul;
+
+    // Wall bounce
+    if (b.x - BALL_R < 0)  { b.x = BALL_R;       b.vx = Math.abs(b.vx); }
+    if (b.x + BALL_R > CW) { b.x = CW - BALL_R;  b.vx = -Math.abs(b.vx); }
+    if (b.y - BALL_R < 0)  { b.y = BALL_R;        b.vy = Math.abs(b.vy); }
+
+    // Paddle
+    if (b.vy > 0 &&
+        b.y + BALL_R >= PADDLE_Y &&
+        b.y + BALL_R <= PADDLE_Y + 12 &&
+        b.x >= paddle.x - paddle.w/2 &&
+        b.x <= paddle.x + paddle.w/2) {
+      b.vy = -Math.abs(b.vy);
+      const hit = (b.x - paddle.x) / (paddle.w/2);
+      b.vx = hit * 4.5;
+      b.y  = PADDLE_Y - BALL_R - 1;
+    }
+
+    // Bricks
+    for (let r = 0; r < BRICK_ROWS; r++) {
+      for (let c = 0; c < BRICK_COLS; c++) {
+        const br = bricks[r][c];
+        if (!br) continue;
+        const bx = c * BRICK_W + BRICK_W/2;
+        const by = BRICK_TOP + r * BRICK_H + BRICK_H/2;
+        const hw = BRICK_W/2 - 1, hh = BRICK_H/2 - 1;
+        if (b.x + BALL_R > bx - hw && b.x - BALL_R < bx + hw &&
+            b.y + BALL_R > by - hh && b.y - BALL_R < by + hh) {
+          // Determine bounce axis
+          const overlapX = hw + BALL_R - Math.abs(b.x - bx);
+          const overlapY = hh + BALL_R - Math.abs(b.y - by);
+          if (overlapX < overlapY) b.vx = -b.vx;
+          else b.vy = -b.vy;
+          hitBrick(r, c, br);
+          return;
+        }
+      }
+    }
+  });
+
+  // Remove lost balls
+  balls = balls.filter(b => b.y - BALL_R < CH);
+  if (balls.length === 0) ballLost();
+
+  // Powerup items
+  powerups.forEach(p => { p.y += 2; });
+  powerups = powerups.filter(p => {
+    if (p.y + 9 > PADDLE_Y && p.y - 9 < PADDLE_Y + 12 &&
+        p.x > paddle.x - paddle.w/2 && p.x < paddle.x + paddle.w/2) {
+      applyPU(p.type);
+      return false;
+    }
+    return p.y < CH + PU_R;
+  });
+
+  // Lasers
+  lasers.forEach(l => { l.y -= 8; });
+  lasers = lasers.filter(l => {
+    if (l.y < 0) return false;
+    for (let r = 0; r < BRICK_ROWS; r++) {
+      for (let c = 0; c < BRICK_COLS; c++) {
+        const br = bricks[r][c];
+        if (!br) continue;
+        const bx = c * BRICK_W, by = BRICK_TOP + r * BRICK_H;
+        if (l.x > bx && l.x < bx + BRICK_W && l.y > by && l.y < by + BRICK_H) {
+          hitBrick(r, c, br);
+          return false;
+        }
+      }
+    }
+    return true;
+  });
+
+  // Auto-fire laser
+  if (activePU.LASER && gameState === 'running') {
+    const now = performance.now();
+    if (!laserLastFire || now - laserLastFire > 300) {
+      lasers.push({ x: paddle.x - 16, y: PADDLE_Y });
+      lasers.push({ x: paddle.x + 16, y: PADDLE_Y });
+      laserLastFire = now;
+    }
+  }
+
+  // Check clear
+  if (bricks.flat().every(b => !b)) {
+    if (mode === 'stage') {
+      stageIdx++;
+      if (stageIdx >= STAGES.length) {
+        endGame(true);
+      } else {
+        stageClear();
+      }
+    } else {
+      // Endless: new wave
+      score += 200;
+      initRound();
+      resumeGame();
+    }
+  }
+}
+
+function hitBrick(r, c, br) {
+  br.hp--;
+  score += 10;
+  if (score > best) { best = score; localStorage.setItem('pb-breakout-best', best); }
+  if (br.hp <= 0) {
+    if (br.pu && Math.random() < 0.7) {
+      const type = PU_KEYS[Math.floor(Math.random() * PU_KEYS.length)];
+      const bx = c * BRICK_W + BRICK_W/2;
+      const by = BRICK_TOP + r * BRICK_H;
+      powerups.push({ x: bx, y: by, type });
+    }
+    bricks[r][c] = null;
+    score += 5;
+  }
+  updateHUD();
+}
+
+function applyPU(type) {
+  if (puTimers[type]) clearTimeout(puTimers[type]);
+  activePU[type] = true;
+  const info = PU_TYPES[type];
+
+  if (type === 'WIDE')   paddle.w = Math.min(140, paddle.w + 40);
+  if (type === 'NARROW') paddle.w = Math.max(40,  paddle.w - 30);
+  if (type === 'MULTI')  { balls.push(newBall()); balls.push(newBall()); return; }
+
+  if (info.duration) {
+    puTimers[type] = setTimeout(() => {
+      delete activePU[type];
+      if (type === 'WIDE')   paddle.w = Math.max(80, paddle.w - 40);
+      if (type === 'NARROW') paddle.w = Math.min(80, paddle.w + 30);
+    }, info.duration);
+  }
+}
+
+function ballLost() {
+  if (mode === 'endless') {
+    endGame(false);
+    return;
+  }
+  lives--;
+  updateHUD();
+  if (lives <= 0) {
+    endGame(false);
+  } else {
+    balls = [newBall()];
+    powerups = [];
+    lasers   = [];
+    gameState = 'idle';
+    showOverlay('💔', `残機 ${'❤️'.repeat(lives)}`, `ミス！\nクリックで再開`, [
+      { label: '▶ 再開', fn: 'resumeGame()' },
+    ]);
+  }
+}
+
+function stageClear() {
+  gameState = 'idle';
+  showOverlay('🎉', `ステージ ${stageIdx} クリア！`, `スコア: ${score}`, [
+    { label: `▶ ステージ ${stageIdx+1} へ`, fn: 'nextStage()' },
+  ]);
+}
+
+function nextStage() {
+  initRound();
+  resumeGame();
+}
+
+function endGame(win) {
+  gameState = win ? 'win' : 'over';
+  cancelAnimationFrame(raf);
+  if (win) {
+    showOverlay('🏆', '全クリア！', `最終スコア: ${score}\nベスト: ${best}`, [
+      { label: '▶ もう一度', fn: "startMode('stage')" },
+      { label: '← モード選択', fn: 'toModeSelect()' },
+    ]);
+  } else {
+    showOverlay('💀', 'ゲームオーバー', `スコア: ${score}\nベスト: ${best}`, [
+      { label: '▶ もう一度', fn: `startMode('${mode}')` },
+      { label: '← モード選択', fn: 'toModeSelect()' },
+    ]);
+  }
+}
+
+function toModeSelect() {
+  cancelAnimationFrame(raf);
+  gameState = 'idle';
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('modeScreen').style.display = 'flex';
+}
+
+// ═══════════════════════════════════════════════════════
+// DRAW
+// ═══════════════════════════════════════════════════════
+function draw() {
+  const c = colors();
+  const dark = document.documentElement.classList.contains('dark');
+
+  ctx.fillStyle = c.bg;
+  ctx.fillRect(0, 0, CW, CH);
+
+  // Bricks
+  for (let r = 0; r < BRICK_ROWS; r++) {
+    for (let c2 = 0; c2 < BRICK_COLS; c2++) {
+      const br = bricks[r][c2];
+      if (!br) continue;
+      const bx = c2 * BRICK_W + 2;
+      const by = BRICK_TOP + r * BRICK_H + 2;
+      const bw = BRICK_W - 4, bh = BRICK_H - 4;
+      const ci = Math.min(br.maxHp - 1, 2);
+      const cols = dark ? BRICK_COLORS_DARK[ci] : BRICK_COLORS[ci];
+      // Crack effect for damaged bricks
+      const alpha = 0.5 + 0.5 * (br.hp / br.maxHp);
+      ctx.globalAlpha = alpha;
+      const g = ctx.createLinearGradient(bx, by, bx, by+bh);
+      g.addColorStop(0, cols[0]);
+      g.addColorStop(1, cols[1]);
+      ctx.fillStyle = g;
+      roundRect(ctx, bx, by, bw, bh, 3); ctx.fill();
+      if (br.pu) {
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.beginPath(); ctx.arc(bx+bw/2, by+bh/2, 3, 0, Math.PI*2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // Powerup items — pill shape with label
+  powerups.forEach(p => {
+    const info = PU_TYPES[p.type];
+    const pw = 44, ph = 18;
+    // shadow
+    ctx.shadowColor = info.color;
+    ctx.shadowBlur = 8;
+    // pill background
+    ctx.fillStyle = info.color;
+    roundRect(ctx, p.x - pw/2, p.y - ph/2, pw, ph, ph/2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // border
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 1;
+    roundRect(ctx, p.x - pw/2, p.y - ph/2, pw, ph, ph/2);
+    ctx.stroke();
+    // label
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(info.label, p.x, p.y);
+  });
+
+  // Lasers
+  ctx.strokeStyle = '#ef4444';
+  ctx.lineWidth = 2;
+  lasers.forEach(l => {
+    ctx.beginPath();
+    ctx.moveTo(l.x, l.y);
+    ctx.lineTo(l.x, l.y - 16);
+    ctx.stroke();
+  });
+
+  // Balls
+  balls.forEach(b => {
+    // Glow
+    const bg = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, BALL_R*2.5);
+    bg.addColorStop(0, c.ballGlow);
+    bg.addColorStop(1, 'transparent');
+    ctx.fillStyle = bg;
+    ctx.beginPath(); ctx.arc(b.x, b.y, BALL_R*2.5, 0, Math.PI*2); ctx.fill();
+    // Ball
+    ctx.fillStyle = c.ball;
+    ctx.beginPath(); ctx.arc(b.x, b.y, BALL_R, 0, Math.PI*2); ctx.fill();
+  });
+
+  // Paddle
+  const pw = paddle.w, px = paddle.x - pw/2;
+  const pg = ctx.createLinearGradient(px, PADDLE_Y, px, PADDLE_Y+10);
+  pg.addColorStop(0, c.paddle);
+  pg.addColorStop(1, dark ? '#065f46' : '#1a4a38');
+  ctx.fillStyle = pg;
+  if (activePU.LASER) {
+    ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 10;
+  }
+  roundRect(ctx, px, PADDLE_Y, pw, 10, 5); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Active PU indicators
+  let ix = 4;
+  Object.keys(activePU).forEach(t => {
+    ctx.fillStyle = PU_TYPES[t].color;
+    ctx.beginPath(); ctx.arc(ix + 5, CH - 8, 4, 0, Math.PI*2); ctx.fill();
+    ix += 14;
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+
+// ═══════════════════════════════════════════════════════
+// OVERLAY
+// ═══════════════════════════════════════════════════════
+function showOverlay(emoji, title, sub, btns) {
+  const ov = document.getElementById('overlay');
+  ov.classList.remove('hidden');
+  document.getElementById('ovEmoji').textContent = emoji;
+  const t = document.getElementById('ovTitle');
+  t.textContent = title;
+  t.className = 'ov-title';
+  document.getElementById('ovSub').innerHTML = sub.replace(/\n/g,'<br>');
+  const bc = document.getElementById('ovBtns');
+  bc.innerHTML = '';
+  btns.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = 'pb-btn primary';
+    btn.textContent = b.label;
+    btn.onclick = new Function(b.fn);
+    bc.appendChild(btn);
+  });
+}
+
+function hideOverlay() {
+  document.getElementById('overlay').classList.add('hidden');
+}
+
+// ═══════════════════════════════════════════════════════
+// INPUT
+// ═══════════════════════════════════════════════════════
+const keys = { left: false, right: false };
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft')  { keys.left  = true; e.preventDefault(); }
+  if (e.key === 'ArrowRight') { keys.right = true; e.preventDefault(); }
+  if (e.key === ' ') {
+    e.preventDefault();
+    if (gameState === 'idle') resumeGame();
+    else if (gameState === 'running') { gameState = 'paused'; cancelAnimationFrame(raf); showOverlay('⏸','一時停止','スペースキーで再開',[{label:'▶ 再開',fn:'resumeGame()'}]); }
+    else if (gameState === 'paused') resumeGame();
+  }
+});
+document.addEventListener('keyup', e => {
+  if (e.key === 'ArrowLeft')  keys.left  = false;
+  if (e.key === 'ArrowRight') keys.right = false;
+});
+
+// Mouse / touch on canvas
+canvas.addEventListener('mousemove', e => {
+  if (gameState !== 'running') return;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = CW / rect.width;
+  paddle.x = (e.clientX - rect.left) * scaleX;
+});
+canvas.addEventListener('touchmove', e => {
+  if (gameState !== 'running') return;
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = CW / rect.width;
+  paddle.x = (e.touches[0].clientX - rect.left) * scaleX;
+}, { passive: false });
+canvas.addEventListener('click', () => {
+  if (gameState === 'idle') resumeGame();
+});
+
+// Mobile buttons
+let leftHeld = false, rightHeld = false;
+function setupMobileBtn(id, setFn) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.addEventListener('touchstart', e => { e.preventDefault(); setFn(true); }, { passive: false });
+  btn.addEventListener('touchend',   e => { e.preventDefault(); setFn(false); }, { passive: false });
+}
+setupMobileBtn('leftBtn',  v => keys.left  = v);
+setupMobileBtn('rightBtn', v => keys.right = v);
+
+// ═══════════════════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════════════════
+function toggleTheme() {
+  const d = document.documentElement.classList.toggle('dark');
+  document.getElementById('themeBtn').textContent = d ? '🌙' : '🌤';
+  localStorage.setItem('pb-theme', d ? 'dark' : 'light');
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+(function() {
+  const saved = localStorage.getItem('pb-theme');
+  const dark  = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark', dark);
+  document.getElementById('themeBtn').textContent = dark ? '🌙' : '🌤';
+  document.getElementById('hudBest').textContent  = best;
+  draw();
+})();
+</script>
+</body>
+</html>
