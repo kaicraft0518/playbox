@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>マンカラ — Playbox</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f5f5f2;--surface:#ffffff;--surface2:#f0f0ec;
+  --border:#e2e2dc;--text:#1a1a18;--text2:#6b6b63;
+  --accent:#2a6b52;--accent-bg:rgba(42,107,82,0.08);
+  --accent2:#c0392b;--shadow:0 2px 12px rgba(0,0,0,0.07);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.10);
+  --radius:10px;--radius-sm:6px;--transition:0.2s ease;
+}
+:root.dark {
+  --bg:#0a0a0f;--surface:#0f0f1a;--surface2:#15151f;
+  --border:#1e1e3a;--text:#e0e0ff;--text2:#5a5a8a;
+  --accent:#00c49a;--accent-bg:rgba(0,196,154,0.08);
+  --accent2:#ff3c6e;--shadow:0 2px 12px rgba(0,0,0,0.3);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.4);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;transition:background var(--transition),color var(--transition);touch-action:manipulation;}
+.pb-nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--border);}
+.pb-nav-inner{display:flex;align-items:center;height:56px;gap:12px;max-width:960px;margin:0 auto;padding:0 20px;min-width:0;}
+.pb-logo{font-family:'Fraunces',serif;font-weight:700;font-size:1.25rem;color:var(--text);text-decoration:none;letter-spacing:-0.02em;white-space:nowrap;}
+.pb-logo span{color:var(--accent);}
+.pb-nav-spacer{flex:1;}
+.pb-icon-btn{width:36px;height:36px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.9rem;transition:all var(--transition);flex-shrink:0;}
+.pb-icon-btn:hover{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
+.pb-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:500;cursor:pointer;transition:all var(--transition);white-space:nowrap;}
+.pb-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg);}
+.pb-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.pb-btn.primary:hover{opacity:0.88;}
+.pb-seg{display:flex;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;}
+.pb-seg-btn{flex:1;padding:6px 10px;background:transparent;border:none;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:0.78rem;font-weight:500;cursor:pointer;transition:all var(--transition);white-space:nowrap;}
+.pb-seg-btn+.pb-seg-btn{border-left:1px solid var(--border);}
+.pb-seg-btn.active{background:var(--accent);color:white;}
+.pb-seg-btn:not(.active):hover{background:var(--accent-bg);color:var(--accent);}
+
+/* Layout */
+.game-wrap{display:flex;flex-direction:column;align-items:center;padding:16px 16px 48px;gap:14px;}
+.game-header{width:100%;max-width:560px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.game-title{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:700;letter-spacing:-0.02em;}
+
+/* Selectors */
+.selectors{width:100%;max-width:560px;display:flex;flex-direction:column;gap:8px;}
+.sel-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.sel-label{font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--text2);letter-spacing:0.12em;text-transform:uppercase;min-width:40px;flex-shrink:0;}
+
+/* Turn banner */
+.turn-banner{
+  width:100%;max-width:560px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:10px 16px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.turn-name{font-weight:600;font-size:0.9rem;color:var(--text);}
+.turn-sub{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--text2);letter-spacing:0.08em;}
+.turn-banner.extra-turn{border-color:var(--accent);background:var(--accent-bg);}
+.extra-badge{font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--accent);border:1px solid var(--accent);border-radius:20px;padding:2px 8px;white-space:nowrap;}
+
+/* Board */
+.board-outer{
+  width:100%;max-width:560px;
+  background:var(--surface);border:2px solid var(--border);border-radius:16px;
+  padding:12px;box-shadow:var(--shadow-lg);
+  position:relative;
+}
+
+/* Player labels */
+.player-labels{display:flex;justify-content:space-between;margin-bottom:8px;padding:0 4px;}
+.player-label{font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--text2);letter-spacing:0.1em;text-transform:uppercase;}
+.player-label.active-label{color:var(--accent);font-weight:500;}
+
+/* Board layout: store | pits | store */
+.board-inner{display:flex;gap:8px;align-items:stretch;}
+
+/* Store (ゲームラ) */
+.store{
+  width:64px;flex-shrink:0;
+  border-radius:var(--radius);
+  border:2px solid var(--border);
+  background:var(--surface2);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;padding:8px;
+  position:relative;
+  transition:border-color 0.2s;
+  min-height:160px;
+}
+.store.mine{border-color:var(--accent);background:var(--accent-bg);}
+.store-count{font-family:'Fraunces',serif;font-size:2rem;font-weight:700;color:var(--text);line-height:1;}
+.store-label{font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--text2);letter-spacing:0.1em;text-transform:uppercase;text-align:center;}
+
+/* Pits grid */
+.pits-wrap{flex:1;display:flex;flex-direction:column;gap:6px;}
+.pits-row{display:flex;gap:6px;}
+.pit{
+  flex:1;
+  aspect-ratio:1;
+  border-radius:50%;
+  border:2px solid var(--border);
+  background:var(--surface2);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;
+  position:relative;
+  transition:border-color 0.15s,background 0.15s,transform 0.15s,box-shadow 0.15s;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.pit.selectable{
+  border-color:var(--accent);
+  cursor:pointer;
+}
+.pit.selectable:hover,.pit.selectable:active{
+  background:var(--accent-bg);
+  transform:scale(1.08);
+  box-shadow:0 0 0 3px var(--accent-bg), var(--shadow);
+}
+.pit.selected{
+  border-color:var(--accent);
+  background:var(--accent-bg);
+  transform:scale(1.08);
+  box-shadow:0 0 0 4px rgba(42,107,82,0.2), var(--shadow-lg);
+}
+:root.dark .pit.selected{
+  box-shadow:0 0 0 4px rgba(0,196,154,0.2), var(--shadow-lg);
+}
+.pit.highlight{
+  border-color:#f59e0b;
+  background:rgba(245,158,11,0.08);
+  animation:highlightPulse 0.6s ease;
+}
+@keyframes highlightPulse{
+  0%,100%{transform:scale(1);}
+  50%{transform:scale(1.12);}
+}
+.pit.landing{
+  animation:landPulse 0.3s ease;
+}
+@keyframes landPulse{
+  0%{transform:scale(1);}
+  50%{transform:scale(1.15);}
+  100%{transform:scale(1);}
+}
+.pit.disabled{
+  opacity:0.45;cursor:not-allowed;
+}
+.pit.empty{opacity:0.35;}
+
+.pit-count{
+  font-family:'Fraunces',serif;font-weight:700;
+  font-size:clamp(0.9rem,2.5vw,1.2rem);
+  color:var(--text);line-height:1;
+}
+.pit-stones{
+  display:flex;flex-wrap:wrap;gap:2px;justify-content:center;
+  max-width:80%;margin-top:2px;
+}
+.stone{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--accent);opacity:0.7;
+  flex-shrink:0;
+}
+.stone.enemy{background:var(--accent2);}
+
+/* Thinking overlay */
+.thinking-bar{
+  width:100%;max-width:560px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:8px 14px;
+  display:none;align-items:center;gap:10px;
+}
+.thinking-bar.show{display:flex;}
+.thinking-dots{
+  font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--accent);
+  letter-spacing:0.15em;
+  animation:pulse 1s ease infinite;
+}
+@keyframes pulse{0%,100%{opacity:0.5;}50%{opacity:1;}}
+
+/* Result */
+.result-overlay{display:none;position:fixed;inset:0;background:rgba(245,245,242,0.93);z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:14px;text-align:center;padding:20px;}
+:root.dark .result-overlay{background:rgba(10,10,15,0.92);}
+.result-overlay.show{display:flex;}
+.result-emoji{font-size:3rem;}
+.result-title{font-family:'Fraunces',serif;font-size:2rem;font-weight:700;letter-spacing:-0.02em;animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);}
+@keyframes popIn{from{transform:scale(0.7);opacity:0;}to{transform:scale(1);opacity:1;}}
+.result-scores{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+.result-score-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 20px;text-align:center;}
+.result-score-val{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:700;color:var(--text);}
+.result-score-label{font-size:0.72rem;color:var(--text2);font-family:'DM Mono',monospace;letter-spacing:0.08em;margin-top:2px;}
+
+/* Rules hint */
+.rules-hint{width:100%;max-width:560px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;}
+.rules-title{font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--text2);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:8px;}
+.rules-text{font-size:0.75rem;color:var(--text2);line-height:1.8;}
+.rules-text b{color:var(--text);}
+</style>
+</head>
+<body>
+
+<nav class="pb-nav">
+  <div class="pb-nav-inner">
+    <a href="../index.html" class="pb-logo">Play<span>box</span></a>
+    <div class="pb-nav-spacer"></div>
+    <button class="pb-icon-btn" id="themeBtn" onclick="toggleTheme()">🌤</button>
+  </div>
+</nav>
+
+<div class="game-wrap">
+
+  <div class="game-header">
+    <div class="game-title">マンカラ</div>
+    <button class="pb-btn primary" onclick="newGame()">▶ NEW</button>
+  </div>
+
+  <!-- Selectors -->
+  <div class="selectors">
+    <div class="sel-row">
+      <span class="sel-label">モード</span>
+      <div class="pb-seg" id="modeSeg">
+        <button class="pb-seg-btn active" onclick="setMode('cpu')">🤖 CPU対戦</button>
+        <button class="pb-seg-btn" onclick="setMode('2p')">👥 2人対戦</button>
+      </div>
+    </div>
+    <div class="sel-row" id="cpuRow">
+      <span class="sel-label">強さ</span>
+      <div class="pb-seg" id="cpuSeg">
+        <button class="pb-seg-btn" onclick="setCPU(0)">弱</button>
+        <button class="pb-seg-btn active" onclick="setCPU(1)">中</button>
+        <button class="pb-seg-btn" onclick="setCPU(2)">強</button>
+        <button class="pb-seg-btn" onclick="setCPU(3)">超強</button>
+        <button class="pb-seg-btn" onclick="setCPU(4)">最強</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Turn banner -->
+  <div class="turn-banner" id="turnBanner">
+    <div>
+      <div class="turn-name" id="turnName">あなたの番</div>
+      <div class="turn-sub" id="turnSub">穴を選んでください</div>
+    </div>
+    <span class="extra-badge" id="extraBadge" style="display:none;">もう一度！</span>
+  </div>
+
+  <!-- Thinking bar -->
+  <div class="thinking-bar" id="thinkingBar">
+    <span class="thinking-dots">● ● ●</span>
+    <span style="font-size:0.78rem;color:var(--text2);">CPUが考えています…</span>
+  </div>
+
+  <!-- Board -->
+  <div class="board-outer">
+    <div class="player-labels">
+      <span class="player-label" id="labelP2">プレイヤー2（上）</span>
+      <span class="player-label" id="labelP1">あなた（下）</span>
+    </div>
+    <div class="board-inner">
+      <!-- P2's store (left) -->
+      <div class="store" id="storeP2">
+        <div class="store-count" id="storeCountP2">0</div>
+        <div class="store-label">P2<br>ゲームラ</div>
+      </div>
+
+      <!-- Pits -->
+      <div class="pits-wrap">
+        <!-- P2's pits (top row, right to left: pit5→pit0) -->
+        <div class="pits-row" id="rowP2"></div>
+        <!-- P1's pits (bottom row, left to right: pit0→pit5) -->
+        <div class="pits-row" id="rowP1"></div>
+      </div>
+
+      <!-- P1's store (right) -->
+      <div class="store" id="storeP1">
+        <div class="store-count" id="storeCountP1">0</div>
+        <div class="store-label">あなた<br>ゲームラ</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rules -->
+  <div class="rules-hint">
+    <div class="rules-title">ルール</div>
+    <div class="rules-text">
+      <b>穴を選ぶ</b>と石を反時計回りに1つずつ配ります。<br>
+      <b>最後の石が自分のゲームラ</b>に入ると<b>もう一度</b>プレイできます。<br>
+      どちらかのサイドが全て空になったらゲーム終了。残りの石は相手のゲームラへ。<br>
+      <b>ゲームラの石が多い方の勝ち。</b>
+    </div>
+  </div>
+
+</div>
+
+<!-- Result -->
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-emoji" id="resEmoji">🏆</div>
+  <div class="result-title" id="resTitle"></div>
+  <div class="result-scores">
+    <div class="result-score-box">
+      <div class="result-score-val" id="resS1">—</div>
+      <div class="result-score-label" id="resL1">あなた</div>
+    </div>
+    <div class="result-score-box">
+      <div class="result-score-val" id="resS2">—</div>
+      <div class="result-score-label" id="resL2">CPU</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:8px;">
+    <button class="pb-btn" onclick="document.getElementById('resultOverlay').classList.remove('show')">閉じる</button>
+    <button class="pb-btn primary" onclick="newGame();document.getElementById('resultOverlay').classList.remove('show')">もう一度</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// BOARD LAYOUT
+// Board array: [p1_pit0..p1_pit5, p1_store, p2_pit0..p2_pit5, p2_store]
+// Indices:       0  1  2  3  4  5     6       7  8  9 10 11 12    13
+// P1 = player 1 (human in CPU mode, bottom row)
+// P2 = player 2 (CPU or P2, top row)
+// P1 pits: 0-5,  P1 store: 6
+// P2 pits: 7-12, P2 store: 13
+// Sowing goes: P1 → 0→1→2→3→4→5→6(store)→7→8→9→10→11→12→(skip 13)→0...
+// For P2:      7→8→9→10→11→12→13(store)→0→1→2→3→4→5→(skip 6)→7...
+// ═══════════════════════════════════════════════════════
+const P1_PITS  = [0,1,2,3,4,5];
+const P1_STORE = 6;
+const P2_PITS  = [7,8,9,10,11,12];
+const P2_STORE = 13;
+const TOTAL    = 14;
+
+const CPU_DEPTHS = [1, 1, 3, 5, 7];
+
+// ═══════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════
+let gameMode  = 'cpu';
+let cpuLevel  = 1;
+
+function setMode(m) {
+  gameMode = m;
+  document.querySelectorAll('#modeSeg .pb-seg-btn').forEach((b,i)=>b.classList.toggle('active',i===(m==='cpu'?0:1)));
+  document.getElementById('cpuRow').style.display = m==='cpu' ? '' : 'none';
+  newGame();
+}
+
+function setCPU(lvl) {
+  cpuLevel = lvl;
+  document.querySelectorAll('#cpuSeg .pb-seg-btn').forEach((b,i)=>b.classList.toggle('active',i===lvl));
+  newGame();
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════════════════
+let pits      = [];
+let current   = 1;  // 1 or 2
+let animating = false;
+let gameOver  = false;
+
+function newGame() {
+  pits = Array(TOTAL).fill(4);
+  pits[P1_STORE] = 0;
+  pits[P2_STORE] = 0;
+  current   = 1;
+  animating = false;
+  gameOver  = false;
+  document.getElementById('resultOverlay').classList.remove('show');
+  document.getElementById('thinkingBar').classList.remove('show');
+  document.getElementById('extraBadge').style.display = 'none';
+  updateLabels();
+  render();
+  updateTurnBanner(false);
+}
+
+function updateLabels() {
+  const names = getCPULevelName();
+  if (gameMode === 'cpu') {
+    document.getElementById('labelP1').textContent = 'あなた（下）';
+    document.getElementById('labelP2').textContent = `CPU ${names}（上）`;
+    document.getElementById('storeP1').querySelector('.store-label').textContent = 'あなた\nゲームラ';
+    document.getElementById('storeP2').querySelector('.store-label').textContent = 'CPU\nゲームラ';
+    document.getElementById('resL1').textContent = 'あなた';
+    document.getElementById('resL2').textContent = `CPU ${names}`;
+  } else {
+    document.getElementById('labelP1').textContent = 'プレイヤー1（下）';
+    document.getElementById('labelP2').textContent = 'プレイヤー2（上）';
+    document.getElementById('storeP1').querySelector('.store-label').textContent = 'P1\nゲームラ';
+    document.getElementById('storeP2').querySelector('.store-label').textContent = 'P2\nゲームラ';
+    document.getElementById('resL1').textContent = 'プレイヤー1';
+    document.getElementById('resL2').textContent = 'プレイヤー2';
+  }
+}
+
+function getCPULevelName() {
+  return ['（弱）','（中）','（強）','（超強）','（最強）'][cpuLevel];
+}
+
+// ═══════════════════════════════════════════════════════
+// MANCALA LOGIC
+// ═══════════════════════════════════════════════════════
+function getPlayerPits(player) { return player===1 ? P1_PITS : P2_PITS; }
+function getPlayerStore(player){ return player===1 ? P1_STORE : P2_STORE; }
+function getOpponentStore(player){ return player===1 ? P2_STORE : P1_STORE; }
+
+// Get sowing sequence from pit index for given player
+function getSowSequence(fromIdx, player) {
+  const oppStore = getOpponentStore(player);
+  const seq = [];
+  let idx = fromIdx;
+  const stones = pits[fromIdx];
+  for (let i = 0; i < stones; i++) {
+    idx = (idx + 1) % TOTAL;
+    if (idx === oppStore) idx = (idx + 1) % TOTAL; // skip opponent's store
+    seq.push(idx);
+  }
+  return seq;
+}
+
+// Apply a move, returns { newPits, extraTurn, captured }
+function applyMove(p, pitIdx, player) {
+  const np = [...p];
+  const stones = np[pitIdx];
+  np[pitIdx] = 0;
+  const oppStore = getOpponentStore(player);
+  const myPits   = getPlayerPits(player);
+  const myStore  = getPlayerStore(player);
+
+  let idx = pitIdx;
+  let lastIdx = -1;
+  for (let i = 0; i < stones; i++) {
+    idx = (idx + 1) % TOTAL;
+    if (idx === oppStore) idx = (idx + 1) % TOTAL;
+    np[idx]++;
+    lastIdx = idx;
+  }
+
+  // Extra turn?
+  const extraTurn = lastIdx === myStore;
+
+  // Capture: last stone lands in own empty pit (was empty before sowing)
+  let captured = false;
+  if (!extraTurn && myPits.includes(lastIdx) && np[lastIdx] === 1) {
+    const oppIdx = 12 - lastIdx; // mirror index: 0↔12, 1↔11, 2↔10, 3↔9, 4↔8, 5↔7
+    if (np[oppIdx] > 0) {
+      np[myStore] += np[oppIdx] + 1;
+      np[oppIdx] = 0;
+      np[lastIdx] = 0;
+      captured = true;
+    }
+  }
+
+  return { newPits: np, extraTurn, captured, lastIdx };
+}
+
+function getValidMoves(p, player) {
+  return getPlayerPits(player).filter(i => p[i] > 0);
+}
+
+function checkGameOver(p) {
+  const p1Empty = P1_PITS.every(i => p[i] === 0);
+  const p2Empty = P2_PITS.every(i => p[i] === 0);
+  return p1Empty || p2Empty;
+}
+
+function finalizeBoard(p) {
+  const np = [...p];
+  // Remaining stones go to respective stores
+  P1_PITS.forEach(i => { np[P1_STORE] += np[i]; np[i] = 0; });
+  P2_PITS.forEach(i => { np[P2_STORE] += np[i]; np[i] = 0; });
+  return np;
+}
+
+// ═══════════════════════════════════════════════════════
+// AI
+// ═══════════════════════════════════════════════════════
+function evaluate(p, player) {
+  const myStore  = getPlayerStore(player);
+  const oppStore = getOpponentStore(player);
+  let score = p[myStore] - p[oppStore];
+
+  // Bonus for extra turn opportunities
+  if (cpuLevel >= 2) {
+    getPlayerPits(player).forEach(i => {
+      if (p[i] > 0) {
+        const seq = getSowSequenceFromPits(p, i, player);
+        if (seq[seq.length-1] === myStore) score += 3;
+      }
+    });
+  }
+
+  // Noise for weaker levels
+  if (cpuLevel === 0) return Math.random() * 20 - 10;
+  if (cpuLevel === 1) return score + (Math.random() * 8 - 4);
+  if (cpuLevel === 2) return score + (Math.random() * 3 - 1.5);
+  return score;
+}
+
+function getSowSequenceFromPits(p, fromIdx, player) {
+  const oppStore = getOpponentStore(player);
+  const seq = [];
+  let idx = fromIdx;
+  const stones = p[fromIdx];
+  for (let i = 0; i < stones; i++) {
+    idx = (idx + 1) % TOTAL;
+    if (idx === oppStore) idx = (idx + 1) % TOTAL;
+    seq.push(idx);
+  }
+  return seq;
+}
+
+function minimax(p, depth, alpha, beta, player, maxPlayer) {
+  if (depth === 0 || checkGameOver(p)) {
+    return evaluate(checkGameOver(p) ? finalizeBoard(p) : p, maxPlayer);
+  }
+  const moves = getValidMoves(p, player);
+  if (moves.length === 0) return evaluate(p, maxPlayer);
+
+  if (player === maxPlayer) {
+    let best = -Infinity;
+    for (const m of moves) {
+      const { newPits, extraTurn } = applyMove(p, m, player);
+      const next = extraTurn ? player : (player === 1 ? 2 : 1);
+      const val = minimax(newPits, extraTurn ? depth : depth-1, alpha, beta, next, maxPlayer);
+      best = Math.max(best, val);
+      alpha = Math.max(alpha, val);
+      if (beta <= alpha) break;
+    }
+    return best;
+  } else {
+    let best = Infinity;
+    for (const m of moves) {
+      const { newPits, extraTurn } = applyMove(p, m, player);
+      const next = extraTurn ? player : (player === 1 ? 2 : 1);
+      const val = minimax(newPits, extraTurn ? depth : depth-1, alpha, beta, next, maxPlayer);
+      best = Math.min(best, val);
+      beta = Math.min(beta, val);
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+}
+
+function getBestMove(p, player) {
+  const moves = getValidMoves(p, player);
+  if (moves.length === 0) return null;
+  if (cpuLevel === 0) return moves[Math.floor(Math.random() * moves.length)];
+
+  const depth = CPU_DEPTHS[cpuLevel];
+  let bestVal = -Infinity, bestMove = moves[0];
+  for (const m of moves) {
+    const { newPits, extraTurn } = applyMove(p, m, player);
+    const next = extraTurn ? player : (player===1?2:1);
+    const val = minimax(newPits, depth-1, -Infinity, Infinity, next, player);
+    if (val > bestVal) { bestVal = val; bestMove = m; }
+  }
+  return bestMove;
+}
+
+// ═══════════════════════════════════════════════════════
+// ANIMATION
+// ═══════════════════════════════════════════════════════
+function animateSow(pitIdx, player, callback) {
+  animating = true;
+  const oppStore = getOpponentStore(player);
+  const stones   = pits[pitIdx];
+
+  // Gather sequence
+  const seq = [];
+  let idx = pitIdx;
+  for (let i = 0; i < stones; i++) {
+    idx = (idx + 1) % TOTAL;
+    if (idx === oppStore) idx = (idx + 1) % TOTAL;
+    seq.push(idx);
+  }
+
+  // Clear source pit immediately
+  pits[pitIdx] = 0;
+  render(pitIdx, -1, []);
+
+  let step = 0;
+  function doStep() {
+    if (step >= seq.length) {
+      animating = false;
+      callback(seq[seq.length - 1]);
+      return;
+    }
+    const target = seq[step];
+    pits[target]++;
+    step++;
+    render(pitIdx, target, seq.slice(0, step));
+    setTimeout(doStep, 120);
+  }
+  setTimeout(doStep, 60);
+}
+
+// ═══════════════════════════════════════════════════════
+// HUMAN MOVE
+// ═══════════════════════════════════════════════════════
+function onPitClick(pitIdx) {
+  if (animating || gameOver) return;
+  if (gameMode === 'cpu' && current !== 1) return;
+  if (!getPlayerPits(current).includes(pitIdx)) return;
+  if (pits[pitIdx] === 0) return;
+
+  document.getElementById('extraBadge').style.display = 'none';
+  animateSow(pitIdx, current, afterMove);
+}
+
+function afterMove(lastIdx) {
+  // Apply capture logic
+  const { newPits, extraTurn, captured } = applyMove(
+    pits.map((v,i)=> i === P1_STORE||i===P2_STORE ? v : v), // already applied via animation
+    -1, current // dummy — we re-apply cleanly
+  );
+  // Actually re-apply from scratch to get capture
+  // Re-run applyMove on original (before animation) — we need to redo properly
+  // Instead, handle capture after animation:
+  handleCapture(lastIdx, current);
+
+  if (checkGameOver(pits)) {
+    pits = finalizeBoard(pits);
+    render();
+    setTimeout(endGame, 600);
+    return;
+  }
+
+  const myStore = getPlayerStore(current);
+  const extraTurnNow = lastIdx === myStore;
+
+  if (extraTurnNow) {
+    document.getElementById('extraBadge').style.display = '';
+    updateTurnBanner(true);
+    render();
+    if (gameMode === 'cpu' && current === 2) {
+      setTimeout(doCPUMove, 800);
+    }
+    return;
+  }
+
+  // Switch turn
+  current = current === 1 ? 2 : 1;
+  document.getElementById('extraBadge').style.display = 'none';
+  updateTurnBanner(false);
+  render();
+
+  if (gameMode === 'cpu' && current === 2) {
+    setTimeout(doCPUMove, 400);
+  }
+}
+
+function handleCapture(lastIdx, player) {
+  const myPits  = getPlayerPits(player);
+  const myStore = getPlayerStore(player);
+  if (!myPits.includes(lastIdx)) return;
+  if (pits[lastIdx] !== 1) return; // was empty before (now has 1 = just landed)
+  const oppIdx = 12 - lastIdx;
+  if (pits[oppIdx] > 0) {
+    pits[myStore] += pits[oppIdx] + 1;
+    pits[oppIdx]  = 0;
+    pits[lastIdx] = 0;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// CPU MOVE
+// ═══════════════════════════════════════════════════════
+function doCPUMove() {
+  if (gameOver || animating) return;
+  document.getElementById('thinkingBar').classList.add('show');
+
+  const delay = 400 + cpuLevel * 150;
+  setTimeout(() => {
+    document.getElementById('thinkingBar').classList.remove('show');
+    const move = getBestMove(pits, 2);
+    if (!move && move !== 0) {
+      current = 1; updateTurnBanner(false); render(); return;
+    }
+    document.getElementById('extraBadge').style.display = 'none';
+    animateSow(move, 2, afterMove);
+  }, delay);
+}
+
+// ═══════════════════════════════════════════════════════
+// TURN BANNER
+// ═══════════════════════════════════════════════════════
+function updateTurnBanner(extra) {
+  const banner = document.getElementById('turnBanner');
+  const name   = document.getElementById('turnName');
+  const sub    = document.getElementById('turnSub');
+
+  let playerName;
+  if (gameMode === 'cpu') {
+    playerName = current === 1 ? 'あなたの番' : `CPU${getCPULevelName()}の番`;
+  } else {
+    playerName = current === 1 ? 'プレイヤー1の番' : 'プレイヤー2の番';
+  }
+
+  name.textContent = playerName;
+  sub.textContent  = extra ? 'もう一度選んでください！' : (current===1||(gameMode==='2p') ? '穴を選んでください' : '考えています…');
+  banner.className = 'turn-banner' + (extra ? ' extra-turn' : '');
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════
+function render(selected=-1, landing=-1, trail=[]) {
+  // Stores
+  document.getElementById('storeCountP1').textContent = pits[P1_STORE];
+  document.getElementById('storeCountP2').textContent = pits[P2_STORE];
+
+  const s1 = document.getElementById('storeP1');
+  const s2 = document.getElementById('storeP2');
+  s1.className = 'store' + (current===1&&!gameOver?' mine':'');
+  s2.className = 'store' + (current===2&&!gameOver?' mine':'');
+
+  // P1 pits (bottom row, left to right: 0→5)
+  const rowP1 = document.getElementById('rowP1');
+  rowP1.innerHTML = '';
+  for (const i of P1_PITS) {
+    rowP1.appendChild(makePit(i, 1, selected, landing, trail));
+  }
+
+  // P2 pits (top row, RIGHT to LEFT: 12→7, so visually mirrors P1)
+  const rowP2 = document.getElementById('rowP2');
+  rowP2.innerHTML = '';
+  for (const i of [...P2_PITS].reverse()) {
+    rowP2.appendChild(makePit(i, 2, selected, landing, trail));
+  }
+
+  // Labels
+  document.getElementById('labelP1').className = 'player-label' + (current===1?' active-label':'');
+  document.getElementById('labelP2').className = 'player-label' + (current===2?' active-label':'');
+}
+
+function makePit(idx, player, selected, landing, trail) {
+  const count = pits[idx];
+  const el = document.createElement('div');
+
+  const isCurrentPlayer = player === current;
+  const isSelectable = !animating && !gameOver && isCurrentPlayer && count > 0 &&
+    (gameMode === '2p' || player === 1);
+  const isSelected  = idx === selected;
+  const isLanding   = idx === landing;
+  const isTrail     = trail.includes(idx);
+
+  let cls = 'pit';
+  if (count === 0)   cls += ' empty';
+  if (isSelected)    cls += ' selected';
+  else if (isSelectable) cls += ' selectable';
+  else if (!isCurrentPlayer || count === 0) cls += ' disabled';
+  if (isLanding)     cls += ' landing';
+  else if (isTrail)  cls += ' highlight';
+
+  el.className = cls;
+  el.addEventListener('click', () => onPitClick(idx));
+
+  // Count
+  const countEl = document.createElement('div');
+  countEl.className = 'pit-count';
+  countEl.textContent = count;
+  el.appendChild(countEl);
+
+  // Stone dots (up to 12)
+  if (count > 0 && count <= 16) {
+    const stonesEl = document.createElement('div');
+    stonesEl.className = 'pit-stones';
+    const show = Math.min(count, 12);
+    for (let s = 0; s < show; s++) {
+      const stone = document.createElement('div');
+      stone.className = 'stone' + (player===2?' enemy':'');
+      stonesEl.appendChild(stone);
+    }
+    el.appendChild(stonesEl);
+  }
+
+  return el;
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME OVER
+// ═══════════════════════════════════════════════════════
+function endGame() {
+  gameOver = true;
+  const s1 = pits[P1_STORE], s2 = pits[P2_STORE];
+
+  let emoji, title;
+  if (gameMode === 'cpu') {
+    if (s1 > s2)      { emoji='🏆'; title='あなたの勝ち！'; }
+    else if (s2 > s1) { emoji='😞'; title='CPUの勝ち'; }
+    else              { emoji='🤝'; title='引き分け！'; }
+  } else {
+    if (s1 > s2)      { emoji='🏆'; title='プレイヤー1の勝ち！'; }
+    else if (s2 > s1) { emoji='🏆'; title='プレイヤー2の勝ち！'; }
+    else              { emoji='🤝'; title='引き分け！'; }
+  }
+
+  document.getElementById('resEmoji').textContent = emoji;
+  document.getElementById('resTitle').textContent = title;
+  document.getElementById('resS1').textContent = s1;
+  document.getElementById('resS2').textContent = s2;
+  setTimeout(() => document.getElementById('resultOverlay').classList.add('show'), 400);
+}
+
+// ═══════════════════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════════════════
+function toggleTheme() {
+  const d = document.documentElement.classList.toggle('dark');
+  document.getElementById('themeBtn').textContent = d ? '🌙' : '🌤';
+  localStorage.setItem('pb-theme', d ? 'dark' : 'light');
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+(function() {
+  const saved = localStorage.getItem('pb-theme');
+  const dark  = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark', dark);
+  document.getElementById('themeBtn').textContent = dark ? '🌙' : '🌤';
+  newGame();
+})();
+</script>
+</body>
+</html>
