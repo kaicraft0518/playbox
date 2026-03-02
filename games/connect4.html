@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>四目並べ — Playbox</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f5f5f2;--surface:#ffffff;--surface2:#f0f0ec;
+  --border:#e2e2dc;--text:#1a1a18;--text2:#6b6b63;
+  --accent:#2a6b52;--accent-bg:rgba(42,107,82,0.08);
+  --accent2:#c0392b;--shadow:0 2px 12px rgba(0,0,0,0.07);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.10);
+  --radius:10px;--radius-sm:6px;--transition:0.2s ease;
+}
+:root.dark {
+  --bg:#0a0a0f;--surface:#0f0f1a;--surface2:#15151f;
+  --border:#1e1e3a;--text:#e0e0ff;--text2:#5a5a8a;
+  --accent:#00c49a;--accent-bg:rgba(0,196,154,0.08);
+  --accent2:#ff3c6e;--shadow:0 2px 12px rgba(0,0,0,0.3);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.4);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;transition:background var(--transition),color var(--transition);touch-action:manipulation;}
+.pb-nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--border);}
+.pb-nav-inner{display:flex;align-items:center;height:56px;gap:12px;max-width:960px;margin:0 auto;padding:0 20px;min-width:0;}
+.pb-logo{font-family:'Fraunces',serif;font-weight:700;font-size:1.25rem;color:var(--text);text-decoration:none;letter-spacing:-0.02em;white-space:nowrap;}
+.pb-logo span{color:var(--accent);}
+.pb-nav-spacer{flex:1;}
+.pb-icon-btn{width:36px;height:36px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.9rem;transition:all var(--transition);flex-shrink:0;}
+.pb-icon-btn:hover{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
+.pb-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:500;cursor:pointer;transition:all var(--transition);white-space:nowrap;}
+.pb-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg);}
+.pb-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.pb-btn.primary:hover{opacity:0.88;}
+.pb-seg{display:flex;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;}
+.pb-seg-btn{flex:1;padding:6px 10px;background:transparent;border:none;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:0.78rem;font-weight:500;cursor:pointer;transition:all var(--transition);white-space:nowrap;}
+.pb-seg-btn+.pb-seg-btn{border-left:1px solid var(--border);}
+.pb-seg-btn.active{background:var(--accent);color:white;}
+.pb-seg-btn:not(.active):hover{background:var(--accent-bg);color:var(--accent);}
+
+/* Layout */
+.game-wrap{display:flex;flex-direction:column;align-items:center;padding:16px 16px 48px;gap:12px;}
+.game-header{width:100%;max-width:480px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.game-title{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:700;letter-spacing:-0.02em;}
+
+/* Selectors */
+.selectors{width:100%;max-width:480px;display:flex;flex-direction:column;gap:8px;}
+.sel-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.sel-label{font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--text2);letter-spacing:0.12em;text-transform:uppercase;min-width:40px;flex-shrink:0;}
+
+/* Score bar */
+.score-bar{width:100%;max-width:480px;display:flex;align-items:center;gap:8px;}
+.score-card{flex:1;background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:10px 14px;display:flex;align-items:center;gap:10px;transition:border-color 0.2s,box-shadow 0.2s;}
+.score-card.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-bg);}
+.score-card.active.p1{border-color:#f97316;}
+.score-card.active.p2{border-color:#3b82f6;}
+.disc-preview{width:26px;height:26px;border-radius:50%;flex-shrink:0;}
+.disc-preview.p1{background:radial-gradient(circle at 35% 35%,#ffb347,#f97316);}
+.disc-preview.p2{background:radial-gradient(circle at 35% 35%,#93c5fd,#3b82f6);}
+.score-info{}
+.score-name{font-size:0.75rem;font-weight:600;color:var(--text2);}
+.score-num{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700;color:var(--text);line-height:1;}
+.score-vs{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--text2);}
+
+/* Turn text */
+.turn-bar{width:100%;max-width:480px;text-align:center;}
+.turn-text{font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--text2);letter-spacing:0.1em;}
+
+/* Board wrap — column hover arrows */
+.board-outer{width:100%;max-width:480px;position:relative;}
+
+/* Column hover indicators */
+.col-hints{display:flex;width:100%;margin-bottom:4px;padding:0 8px;}
+.col-hint{flex:1;height:20px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:transparent;transition:color 0.15s;cursor:pointer;border-radius:4px;}
+.col-hint.active{color:var(--accent);}
+
+/* Board */
+.board{
+  background:var(--surface);
+  border:2px solid var(--border);
+  border-radius:14px;
+  padding:8px;
+  box-shadow:var(--shadow-lg);
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  position:relative;
+}
+
+/* Row */
+.board-row{display:flex;gap:5px;}
+
+/* Cell */
+.cell{
+  flex:1;aspect-ratio:1;
+  border-radius:50%;
+  background:var(--surface2);
+  border:2px solid var(--border);
+  position:relative;
+  cursor:pointer;
+  transition:background 0.1s,border-color 0.1s,transform 0.1s;
+  overflow:hidden;
+}
+.cell:hover{border-color:var(--accent);background:var(--accent-bg);}
+.cell.p1{
+  background:radial-gradient(circle at 35% 35%,#ffb347,#f97316);
+  border-color:#ea580c;
+  cursor:default;
+}
+.cell.p2{
+  background:radial-gradient(circle at 35% 35%,#93c5fd,#3b82f6);
+  border-color:#2563eb;
+  cursor:default;
+}
+.cell.win{
+  animation:winPulse 0.6s ease infinite alternate;
+}
+@keyframes winPulse{
+  from{transform:scale(1);box-shadow:none;}
+  to{transform:scale(1.08);box-shadow:0 0 12px rgba(245,158,11,0.6);}
+}
+.cell.drop{
+  animation:dropIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes dropIn{
+  from{transform:scaleY(0);transform-origin:top;}
+  to{transform:scaleY(1);}
+}
+
+/* Thinking bar */
+.thinking-bar{
+  width:100%;max-width:480px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:8px 14px;display:none;align-items:center;gap:10px;
+}
+.thinking-bar.show{display:flex;}
+.thinking-dots{font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--accent);letter-spacing:0.15em;animation:pulse 1s ease infinite;}
+@keyframes pulse{0%,100%{opacity:0.5;}50%{opacity:1;}}
+
+/* Result overlay */
+.result-overlay{display:none;position:fixed;inset:0;background:rgba(245,245,242,0.93);z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:14px;text-align:center;padding:20px;}
+:root.dark .result-overlay{background:rgba(10,10,15,0.92);}
+.result-overlay.show{display:flex;}
+.result-emoji{font-size:3rem;}
+.result-title{font-family:'Fraunces',serif;font-size:2rem;font-weight:700;letter-spacing:-0.02em;animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);}
+@keyframes popIn{from{transform:scale(0.7);opacity:0;}to{transform:scale(1);opacity:1;}}
+.result-sub{font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text2);letter-spacing:0.08em;}
+</style>
+</head>
+<body>
+
+<nav class="pb-nav">
+  <div class="pb-nav-inner">
+    <a href="../index.html" class="pb-logo">Play<span>box</span></a>
+    <div class="pb-nav-spacer"></div>
+    <button class="pb-icon-btn" id="themeBtn" onclick="toggleTheme()">🌤</button>
+  </div>
+</nav>
+
+<div class="game-wrap">
+
+  <div class="game-header">
+    <div class="game-title">四目並べ</div>
+    <button class="pb-btn primary" onclick="newGame()">▶ NEW</button>
+  </div>
+
+  <!-- Selectors -->
+  <div class="selectors">
+    <div class="sel-row">
+      <span class="sel-label">モード</span>
+      <div class="pb-seg" id="modeSeg">
+        <button class="pb-seg-btn active" onclick="setMode('cpu')">🤖 CPU対戦</button>
+        <button class="pb-seg-btn" onclick="setMode('2p')">👥 2人対戦</button>
+      </div>
+    </div>
+    <div class="sel-row" id="cpuRow">
+      <span class="sel-label">強さ</span>
+      <div class="pb-seg" id="cpuSeg">
+        <button class="pb-seg-btn" onclick="setCPU(0)">弱</button>
+        <button class="pb-seg-btn active" onclick="setCPU(1)">中</button>
+        <button class="pb-seg-btn" onclick="setCPU(2)">強</button>
+        <button class="pb-seg-btn" onclick="setCPU(3)">超強</button>
+        <button class="pb-seg-btn" onclick="setCPU(4)">最強</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Score -->
+  <div class="score-bar">
+    <div class="score-card" id="cardP1">
+      <div class="disc-preview p1"></div>
+      <div class="score-info">
+        <div class="score-name" id="nameP1">あなた</div>
+        <div class="score-num" id="scoreP1">0</div>
+      </div>
+    </div>
+    <div class="score-vs">VS</div>
+    <div class="score-card" id="cardP2">
+      <div class="disc-preview p2"></div>
+      <div class="score-info">
+        <div class="score-name" id="nameP2">CPU（中）</div>
+        <div class="score-num" id="scoreP2">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Turn -->
+  <div class="turn-bar"><div class="turn-text" id="turnText">🟠 あなたの番</div></div>
+
+  <!-- Board -->
+  <div class="board-outer">
+    <div class="col-hints" id="colHints"></div>
+    <div class="board" id="board"></div>
+  </div>
+
+  <!-- Thinking -->
+  <div class="thinking-bar" id="thinkingBar">
+    <span class="thinking-dots">● ● ●</span>
+    <span style="font-size:0.78rem;color:var(--text2);">CPUが考えています…</span>
+  </div>
+
+</div>
+
+<!-- Result -->
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-emoji" id="resEmoji"></div>
+  <div class="result-title" id="resTitle"></div>
+  <div class="result-sub" id="resSub"></div>
+  <div style="display:flex;gap:8px;margin-top:8px;">
+    <button class="pb-btn" onclick="document.getElementById('resultOverlay').classList.remove('show')">閉じる</button>
+    <button class="pb-btn primary" onclick="newGame();document.getElementById('resultOverlay').classList.remove('show')">もう一度</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════
+const ROWS = 6, COLS = 7;
+const P1 = 1, P2 = -1, EMPTY = 0;
+const CPU_DEPTHS = [2, 3, 5, 7, 9];
+
+// ═══════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════
+let gameMode = 'cpu';
+let cpuLevel = 1;
+let scoreP1 = 0, scoreP2 = 0;
+
+function setMode(m) {
+  gameMode = m;
+  document.querySelectorAll('#modeSeg .pb-seg-btn').forEach((b,i) => b.classList.toggle('active', i===(m==='cpu'?0:1)));
+  document.getElementById('cpuRow').style.display = m==='cpu' ? '' : 'none';
+  updateNames();
+  newGame();
+}
+
+function setCPU(lvl) {
+  cpuLevel = lvl;
+  document.querySelectorAll('#cpuSeg .pb-seg-btn').forEach((b,i) => b.classList.toggle('active', i===lvl));
+  const names = ['弱','中','強','超強','最強'];
+  document.getElementById('nameP2').textContent = `CPU（${names[lvl]}）`;
+  newGame();
+}
+
+function updateNames() {
+  const names = ['弱','中','強','超強','最強'];
+  if (gameMode === 'cpu') {
+    document.getElementById('nameP1').textContent = 'あなた';
+    document.getElementById('nameP2').textContent = `CPU（${names[cpuLevel]}）`;
+  } else {
+    document.getElementById('nameP1').textContent = 'プレイヤー1 🟠';
+    document.getElementById('nameP2').textContent = 'プレイヤー2 🔵';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════════════════
+let board = [];
+let current = P1;
+let gameOver = false;
+let thinking = false;
+let winCells = [];
+let hoverCol = -1;
+
+function newGame() {
+  board = Array.from({length:ROWS}, () => Array(COLS).fill(EMPTY));
+  current = P1;
+  gameOver = false;
+  thinking = false;
+  winCells = [];
+  hoverCol = -1;
+  document.getElementById('thinkingBar').classList.remove('show');
+  document.getElementById('resultOverlay').classList.remove('show');
+  updateNames();
+  renderBoard();
+  updateTurnText();
+  updateScoreCards();
+}
+
+// ═══════════════════════════════════════════════════════
+// BOARD LOGIC
+// ═══════════════════════════════════════════════════════
+function getRow(b, col) {
+  for (let r = ROWS-1; r >= 0; r--) if (b[r][col] === EMPTY) return r;
+  return -1;
+}
+
+function dropDisc(b, col, player) {
+  const r = getRow(b, col);
+  if (r === -1) return null;
+  const nb = b.map(row => [...row]);
+  nb[r][col] = player;
+  return nb;
+}
+
+function getValidCols(b) {
+  return Array.from({length:COLS}, (_,c) => c).filter(c => getRow(b,c) !== -1);
+}
+
+function checkWin(b, player) {
+  // Horizontal
+  for (let r=0;r<ROWS;r++) for (let c=0;c<=COLS-4;c++) {
+    if ([0,1,2,3].every(i => b[r][c+i]===player)) return [[r,c],[r,c+1],[r,c+2],[r,c+3]];
+  }
+  // Vertical
+  for (let r=0;r<=ROWS-4;r++) for (let c=0;c<COLS;c++) {
+    if ([0,1,2,3].every(i => b[r+i][c]===player)) return [[r,c],[r+1,c],[r+2,c],[r+3,c]];
+  }
+  // Diagonal ↘
+  for (let r=0;r<=ROWS-4;r++) for (let c=0;c<=COLS-4;c++) {
+    if ([0,1,2,3].every(i => b[r+i][c+i]===player)) return [[r,c],[r+1,c+1],[r+2,c+2],[r+3,c+3]];
+  }
+  // Diagonal ↙
+  for (let r=0;r<=ROWS-4;r++) for (let c=3;c<COLS;c++) {
+    if ([0,1,2,3].every(i => b[r+i][c-i]===player)) return [[r,c],[r+1,c-1],[r+2,c-2],[r+3,c-3]];
+  }
+  return null;
+}
+
+function isFull(b) {
+  return b[0].every(c => c !== EMPTY);
+}
+
+// ═══════════════════════════════════════════════════════
+// AI — Minimax + Alpha-Beta
+// ═══════════════════════════════════════════════════════
+function evaluate(b, player) {
+  let score = 0;
+
+  // Center column preference
+  const centerCol = Math.floor(COLS/2);
+  for (let r=0;r<ROWS;r++) {
+    if (b[r][centerCol]===player) score += 3;
+  }
+
+  // Score windows of 4
+  const directions = [[0,1],[1,0],[1,1],[1,-1]];
+  for (const [dr,dc] of directions) {
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+      const window = [];
+      for (let i=0;i<4;i++) {
+        const nr=r+dr*i, nc=c+dc*i;
+        if (nr>=0&&nr<ROWS&&nc>=0&&nc<COLS) window.push(b[nr][nc]);
+      }
+      if (window.length===4) score += scoreWindow(window, player);
+    }
+  }
+
+  // Noise for weaker levels
+  if (cpuLevel === 0) return Math.random()*40-20;
+  if (cpuLevel === 1) return score + (Math.random()*12-6);
+  if (cpuLevel === 2) return score + (Math.random()*4-2);
+  return score;
+}
+
+function scoreWindow(window, player) {
+  const opp = -player;
+  const mine = window.filter(c=>c===player).length;
+  const empty = window.filter(c=>c===EMPTY).length;
+  const theirs = window.filter(c=>c===opp).length;
+  if (mine===4) return 100;
+  if (mine===3&&empty===1) return 5;
+  if (mine===2&&empty===2) return 2;
+  if (theirs===3&&empty===1) return -4;
+  return 0;
+}
+
+function minimax(b, depth, alpha, beta, isMax, cpuPlayer) {
+  const w1 = checkWin(b, cpuPlayer);
+  const w2 = checkWin(b, -cpuPlayer);
+  if (w1) return 1000 + depth;
+  if (w2) return -1000 - depth;
+  if (isFull(b) || depth === 0) return evaluate(b, cpuPlayer);
+
+  const cols = getValidCols(b);
+  if (isMax) {
+    let best = -Infinity;
+    for (const c of cols) {
+      const nb = dropDisc(b, c, cpuPlayer);
+      best = Math.max(best, minimax(nb, depth-1, alpha, beta, false, cpuPlayer));
+      alpha = Math.max(alpha, best);
+      if (beta <= alpha) break;
+    }
+    return best;
+  } else {
+    let best = Infinity;
+    for (const c of cols) {
+      const nb = dropDisc(b, c, -cpuPlayer);
+      best = Math.min(best, minimax(nb, depth-1, alpha, beta, true, cpuPlayer));
+      beta = Math.min(beta, best);
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+}
+
+function getBestMove(b, player) {
+  const cols = getValidCols(b);
+  if (cols.length === 0) return -1;
+  if (cpuLevel === 0) return cols[Math.floor(Math.random()*cols.length)];
+
+  let bestVal = -Infinity, bestCol = cols[0];
+  const depth = CPU_DEPTHS[cpuLevel];
+  for (const c of cols) {
+    const nb = dropDisc(b, c, player);
+    const val = minimax(nb, depth-1, -Infinity, Infinity, false, player);
+    if (val > bestVal) { bestVal = val; bestCol = c; }
+  }
+  return bestCol;
+}
+
+// ═══════════════════════════════════════════════════════
+// PLAYER MOVE
+// ═══════════════════════════════════════════════════════
+function onColClick(col) {
+  if (gameOver || thinking) return;
+  if (gameMode === 'cpu' && current !== P1) return;
+  if (getRow(board, col) === -1) return;
+
+  placeDisc(col);
+}
+
+function placeDisc(col) {
+  const row = getRow(board, col);
+  if (row === -1) return;
+
+  board[row][col] = current;
+  const player = current;
+  current = -current;
+
+  renderBoard(row, col);
+  updateTurnText();
+
+  const win = checkWin(board, player);
+  if (win) {
+    winCells = win;
+    setTimeout(() => {
+      renderBoard();
+      endGame(player);
+    }, 300);
+    return;
+  }
+  if (isFull(board)) {
+    setTimeout(() => endGame(0), 300);
+    return;
+  }
+
+  if (gameMode === 'cpu' && current === P2) {
+    setTimeout(doCPUMove, 100);
+  }
+}
+
+function doCPUMove() {
+  if (gameOver || thinking) return;
+  thinking = true;
+  document.getElementById('thinkingBar').classList.add('show');
+  const delay = 300 + cpuLevel * 150;
+  setTimeout(() => {
+    document.getElementById('thinkingBar').classList.remove('show');
+    thinking = false;
+    const col = getBestMove(board, P2);
+    if (col !== -1) placeDisc(col);
+  }, delay);
+}
+
+function endGame(winner) {
+  gameOver = true;
+  let emoji, title, sub;
+  if (winner === P1) {
+    scoreP1++;
+    document.getElementById('scoreP1').textContent = scoreP1;
+    if (gameMode === 'cpu') { emoji='🏆'; title='あなたの勝ち！'; }
+    else { emoji='🏆'; title='プレイヤー1の勝ち！'; }
+    sub = `スコア：${scoreP1} — ${scoreP2}`;
+  } else if (winner === P2) {
+    scoreP2++;
+    document.getElementById('scoreP2').textContent = scoreP2;
+    if (gameMode === 'cpu') { emoji='😞'; title='CPUの勝ち'; }
+    else { emoji='🏆'; title='プレイヤー2の勝ち！'; }
+    sub = `スコア：${scoreP1} — ${scoreP2}`;
+  } else {
+    emoji='🤝'; title='引き分け！'; sub='盤面が埋まりました';
+  }
+  document.getElementById('resEmoji').textContent = emoji;
+  document.getElementById('resTitle').textContent = title;
+  document.getElementById('resSub').textContent   = sub;
+  setTimeout(() => document.getElementById('resultOverlay').classList.add('show'), 500);
+  updateScoreCards();
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════
+function renderBoard(lastRow=-1, lastCol=-1) {
+  const boardEl = document.getElementById('board');
+  boardEl.innerHTML = '';
+
+  // Build win set
+  const winSet = new Set(winCells.map(([r,c]) => `${r},${c}`));
+
+  for (let r=0;r<ROWS;r++) {
+    const row = document.createElement('div');
+    row.className = 'board-row';
+    for (let c=0;c<COLS;c++) {
+      const cell = document.createElement('div');
+      const v = board[r][c];
+      let cls = 'cell';
+      if (v === P1) cls += ' p1';
+      if (v === P2) cls += ' p2';
+      if (winSet.has(`${r},${c}`)) cls += ' win';
+      if (r===lastRow && c===lastCol) cls += ' drop';
+      cell.className = cls;
+      cell.addEventListener('click', () => onColClick(c));
+      cell.addEventListener('mouseenter', () => {
+        hoverCol = c;
+        updateColHints();
+      });
+      row.appendChild(cell);
+    }
+    boardEl.appendChild(row);
+  }
+
+  boardEl.addEventListener('mouseleave', () => {
+    hoverCol = -1;
+    updateColHints();
+  });
+
+  renderColHints();
+}
+
+function renderColHints() {
+  const hints = document.getElementById('colHints');
+  hints.innerHTML = '';
+  for (let c=0;c<COLS;c++) {
+    const h = document.createElement('div');
+    h.className = 'col-hint' + (c===hoverCol ? ' active' : '');
+    h.textContent = '▼';
+    h.addEventListener('click', () => onColClick(c));
+    h.addEventListener('mouseenter', () => { hoverCol=c; updateColHints(); });
+    hints.appendChild(h);
+  }
+}
+
+function updateColHints() {
+  const hints = document.getElementById('colHints').children;
+  for (let c=0;c<COLS;c++) {
+    hints[c].className = 'col-hint' + (c===hoverCol ? ' active' : '');
+  }
+}
+
+function updateTurnText() {
+  if (gameOver) return;
+  const el = document.getElementById('turnText');
+  if (gameMode === 'cpu') {
+    el.textContent = current===P1 ? '🟠 あなたの番' : '🔵 CPUの番';
+  } else {
+    el.textContent = current===P1 ? '🟠 プレイヤー1の番' : '🔵 プレイヤー2の番';
+  }
+}
+
+function updateScoreCards() {
+  document.getElementById('cardP1').className = 'score-card' + (!gameOver&&current===P1?' active p1':'');
+  document.getElementById('cardP2').className = 'score-card' + (!gameOver&&current===P2?' active p2':'');
+}
+
+// ═══════════════════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════════════════
+function toggleTheme() {
+  const d = document.documentElement.classList.toggle('dark');
+  document.getElementById('themeBtn').textContent = d ? '🌙' : '🌤';
+  localStorage.setItem('pb-theme', d ? 'dark' : 'light');
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+(function() {
+  const saved = localStorage.getItem('pb-theme');
+  const dark  = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark', dark);
+  document.getElementById('themeBtn').textContent = dark ? '🌙' : '🌤';
+  newGame();
+})();
+</script>
+</body>
+</html>
