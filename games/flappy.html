@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>フラッピー — Playbox</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f5f5f2;--surface:#ffffff;--surface2:#f0f0ec;
+  --border:#e2e2dc;--text:#1a1a18;--text2:#6b6b63;
+  --accent:#2a6b52;--accent-bg:rgba(42,107,82,0.08);
+  --accent2:#c0392b;--shadow:0 2px 12px rgba(0,0,0,0.07);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.10);
+  --radius:10px;--radius-sm:6px;--transition:0.2s ease;
+}
+:root.dark {
+  --bg:#0a0a0f;--surface:#0f0f1a;--surface2:#15151f;
+  --border:#1e1e3a;--text:#e0e0ff;--text2:#5a5a8a;
+  --accent:#00c49a;--accent-bg:rgba(0,196,154,0.08);
+  --accent2:#ff3c6e;--shadow:0 2px 12px rgba(0,0,0,0.3);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.4);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;transition:background var(--transition),color var(--transition);touch-action:none;user-select:none;}
+.pb-nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--border);}
+.pb-nav-inner{display:flex;align-items:center;height:56px;gap:12px;max-width:960px;margin:0 auto;padding:0 20px;min-width:0;}
+.pb-logo{font-family:'Fraunces',serif;font-weight:700;font-size:1.25rem;color:var(--text);text-decoration:none;letter-spacing:-0.02em;white-space:nowrap;}
+.pb-logo span{color:var(--accent);}
+.pb-nav-spacer{flex:1;}
+.pb-icon-btn{width:36px;height:36px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.9rem;transition:all var(--transition);flex-shrink:0;}
+.pb-icon-btn:hover{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
+.pb-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:500;cursor:pointer;transition:all var(--transition);white-space:nowrap;}
+.pb-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg);}
+.pb-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.pb-btn.primary:hover{opacity:0.88;}
+.pb-seg{display:flex;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;}
+.pb-seg-btn{flex:1;padding:6px 12px;background:transparent;border:none;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:0.78rem;font-weight:500;cursor:pointer;transition:all var(--transition);white-space:nowrap;}
+.pb-seg-btn+.pb-seg-btn{border-left:1px solid var(--border);}
+.pb-seg-btn.active{background:var(--accent);color:white;}
+.pb-seg-btn:not(.active):hover{background:var(--accent-bg);color:var(--accent);}
+
+/* Layout */
+.game-wrap{display:flex;flex-direction:column;align-items:center;padding:16px 16px 48px;gap:12px;}
+.game-header{width:100%;max-width:400px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.game-title{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:700;letter-spacing:-0.02em;}
+
+/* Stats */
+.stats-bar{display:flex;gap:8px;width:100%;max-width:400px;flex-wrap:wrap;}
+.stat-pill{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--text2);letter-spacing:0.06em;display:flex;align-items:center;gap:6px;}
+.stat-pill b{color:var(--text);font-weight:500;}
+.stat-pill.accent b{color:var(--accent);}
+
+/* Speed selector */
+.speed-bar{width:100%;max-width:400px;display:flex;align-items:center;gap:10px;}
+.speed-label{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--text2);letter-spacing:0.12em;text-transform:uppercase;white-space:nowrap;}
+
+/* Canvas */
+.canvas-wrap{position:relative;width:100%;max-width:400px;border-radius:14px;overflow:hidden;box-shadow:var(--shadow-lg);border:1px solid var(--border);}
+canvas{display:block;width:100%;height:auto;}
+
+/* Overlay */
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;background:rgba(245,245,242,0.92);backdrop-filter:blur(4px);}
+:root.dark .overlay{background:rgba(10,10,15,0.92);}
+.overlay.hidden{display:none;}
+.ov-emoji{font-size:3rem;line-height:1;}
+.ov-title{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:700;letter-spacing:-0.02em;color:var(--text);}
+.ov-score{font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--text2);letter-spacing:0.1em;}
+.ov-hint{font-size:0.75rem;color:var(--text2);}
+</style>
+</head>
+<body>
+
+<nav class="pb-nav">
+  <div class="pb-nav-inner">
+    <a href="../index.html" class="pb-logo">Play<span>box</span></a>
+    <div class="pb-nav-spacer"></div>
+    <button class="pb-icon-btn" id="themeBtn" onclick="toggleTheme()">🌤</button>
+  </div>
+</nav>
+
+<div class="game-wrap">
+
+  <div class="game-header">
+    <div class="game-title">フラッピー</div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-pill">スコア <b id="statScore">0</b></div>
+    <div class="stat-pill accent">Best <b id="statBest">0</b></div>
+  </div>
+
+  <div class="speed-bar">
+    <span class="speed-label">難易度</span>
+    <div class="pb-seg">
+      <button class="pb-seg-btn" onclick="setDiff(0)">🐢 かんたん</button>
+      <button class="pb-seg-btn active" onclick="setDiff(1)">⚡ ふつう</button>
+      <button class="pb-seg-btn" onclick="setDiff(2)">🔥 むずかしい</button>
+    </div>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="canvas"></canvas>
+    <div class="overlay" id="overlay">
+      <div class="ov-emoji">🐦</div>
+      <div class="ov-title">フラッピー</div>
+      <div class="ov-score" id="ovScore"></div>
+      <button class="pb-btn primary" id="startBtn" onclick="startGame()">▶ スタート</button>
+      <div class="ov-hint">タップ / スペースキーで上昇</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── Config ───────────────────────────────────────────
+const CW = 360, CH = 540;
+
+const DIFFS = [
+  { gravity:0.28, flapPower:-6.0, pipeSpeed:2.2, pipeGap:160, pipeInterval:1800 }, // easy
+  { gravity:0.38, flapPower:-7.0, pipeSpeed:2.8, pipeGap:140, pipeInterval:1600 }, // normal
+  { gravity:0.50, flapPower:-7.5, pipeSpeed:3.6, pipeGap:118, pipeInterval:1400 }, // hard
+];
+let diffIdx = 1;
+let cfg = DIFFS[diffIdx];
+
+// ─── State ────────────────────────────────────────────
+let bird, pipes, score, best, gameState, raf, lastPipeTime, frameCount;
+best = parseInt(localStorage.getItem('pb-flappy-best') || '0');
+
+// ─── Canvas ───────────────────────────────────────────
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+canvas.width  = CW;
+canvas.height = CH;
+
+// ─── Color helpers ────────────────────────────────────
+function c() {
+  const dark = document.documentElement.classList.contains('dark');
+  return {
+    sky:    dark ? '#0a0f1e' : '#e0f4ff',
+    skyBot: dark ? '#0f1a2e' : '#c8eaf8',
+    ground: dark ? '#1a1a0f' : '#d4a855',
+    groundTop: dark ? '#2a2a18' : '#e8c07a',
+    grass:  dark ? '#1a3a1a' : '#5cb85c',
+    pipe:   dark ? '#00c49a' : '#2a6b52',
+    pipeDark: dark ? '#008f70' : '#1a4a38',
+    pipeCap: dark ? '#00e6b5' : '#3a8a6a',
+    bird:   dark ? '#ffd700' : '#f5a623',
+    birdWing: dark ? '#ffb300' : '#e08c10',
+    birdBelly: dark ? '#fff8dc' : '#fff0b3',
+    birdEye: dark ? '#1a1a2e' : '#1a1a18',
+    text:   dark ? '#e0e0ff' : '#1a1a18',
+  };
+}
+
+// ─── Bird ─────────────────────────────────────────────
+function initBird() {
+  bird = { x: CW * 0.25, y: CH * 0.4, vy: 0, angle: 0, wingPhase: 0, radius: 16 };
+}
+
+function flap() {
+  if (gameState === 'idle' || gameState === 'over') { startGame(); return; }
+  if (gameState === 'running') bird.vy = cfg.flapPower;
+}
+
+// ─── Pipes ────────────────────────────────────────────
+const GROUND_H = 60;
+const PIPE_W = 52;
+const CAP_H  = 14;
+
+function spawnPipe() {
+  const minTop = 60;
+  const maxTop = CH - GROUND_H - cfg.pipeGap - 60;
+  const topH = minTop + Math.random() * (maxTop - minTop);
+  pipes.push({ x: CW + 10, topH, scored: false });
+}
+
+// ─── Game flow ────────────────────────────────────────
+function setDiff(idx) {
+  diffIdx = idx;
+  cfg = DIFFS[idx];
+  document.querySelectorAll('.pb-seg-btn').forEach((b,i) => b.classList.toggle('active', i===idx));
+  if (gameState === 'running') startGame();
+}
+
+function startGame() {
+  initBird();
+  pipes = [];
+  score = 0;
+  frameCount = 0;
+  lastPipeTime = performance.now();
+  gameState = 'running';
+  document.getElementById('overlay').classList.add('hidden');
+  document.getElementById('statScore').textContent = 0;
+  if (raf) cancelAnimationFrame(raf);
+  raf = requestAnimationFrame(loop);
+}
+
+let lastTime = 0;
+function loop(ts) {
+  if (gameState !== 'running') return;
+  lastTime = ts;
+  update(ts);
+  draw();
+  raf = requestAnimationFrame(loop);
+}
+
+// ─── Update ───────────────────────────────────────────
+function update(ts) {
+  frameCount++;
+
+  // Bird physics
+  bird.vy += cfg.gravity;
+  bird.vy = Math.min(bird.vy, 12);
+  bird.y += bird.vy;
+  bird.angle = Math.max(-30, Math.min(80, bird.vy * 5));
+  bird.wingPhase += 0.25;
+
+  // Spawn pipes
+  if (ts - lastPipeTime > cfg.pipeInterval) {
+    spawnPipe();
+    lastPipeTime = ts;
+  }
+
+  // Move pipes
+  pipes.forEach(p => p.x -= cfg.pipeSpeed);
+  pipes = pipes.filter(p => p.x + PIPE_W > -10);
+
+  // Score
+  pipes.forEach(p => {
+    if (!p.scored && p.x + PIPE_W < bird.x - bird.radius) {
+      p.scored = true;
+      score++;
+      if (score > best) {
+        best = score;
+        localStorage.setItem('pb-flappy-best', best);
+        document.getElementById('statBest').textContent = best;
+      }
+      document.getElementById('statScore').textContent = score;
+    }
+  });
+
+  // Collision: ground / ceiling
+  if (bird.y + bird.radius >= CH - GROUND_H || bird.y - bird.radius <= 0) {
+    die(); return;
+  }
+
+  // Collision: pipes
+  for (const p of pipes) {
+    const bx = bird.x, by = bird.y, br = bird.radius - 3;
+    const px1 = p.x, px2 = p.x + PIPE_W;
+    if (bx + br > px1 && bx - br < px2) {
+      // Top pipe
+      if (by - br < p.topH + CAP_H) { die(); return; }
+      // Bottom pipe
+      const botTop = p.topH + cfg.pipeGap;
+      if (by + br > botTop - CAP_H) { die(); return; }
+    }
+  }
+}
+
+function die() {
+  gameState = 'over';
+  cancelAnimationFrame(raf);
+  draw();
+  const ov = document.getElementById('overlay');
+  ov.classList.remove('hidden');
+  ov.querySelector('.ov-emoji').textContent = score > 10 ? '🏆' : '💀';
+  ov.querySelector('.ov-title').textContent = 'ゲームオーバー';
+  document.getElementById('ovScore').textContent = `スコア: ${score}　ベスト: ${best}`;
+  document.getElementById('startBtn').textContent = '▶ もう一度';
+}
+
+// ─── Draw ─────────────────────────────────────────────
+function draw() {
+  const col = c();
+
+  // Sky gradient
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, CH - GROUND_H);
+  skyGrad.addColorStop(0, col.sky);
+  skyGrad.addColorStop(1, col.skyBot);
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, CW, CH);
+
+  // Clouds (decorative, static-ish)
+  drawClouds(col);
+
+  // Pipes
+  pipes.forEach(p => drawPipe(p, col));
+
+  // Ground
+  drawGround(col);
+
+  // Bird
+  drawBird(col);
+
+  // Score overlay during play
+  if (gameState === 'running') {
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.font = `bold ${CW * 0.12}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillText(score, CW / 2, 20);
+  }
+}
+
+function drawClouds(col) {
+  ctx.fillStyle = document.documentElement.classList.contains('dark')
+    ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.7)';
+  const clouds = [[60,80,50,22],[180,55,70,28],[290,95,45,20],[120,140,55,24],[250,160,40,18]];
+  clouds.forEach(([x,y,w,h]) => {
+    ctx.beginPath();
+    ctx.ellipse(x, y, w, h, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(x+w*0.4, y-h*0.3, w*0.6, h*0.7, 0, 0, Math.PI*2);
+    ctx.fill();
+  });
+}
+
+function drawPipe(p, col) {
+  const botTop = p.topH + cfg.pipeGap;
+  const botH   = CH - GROUND_H - botTop;
+
+  // Top pipe body
+  const tg = ctx.createLinearGradient(p.x, 0, p.x + PIPE_W, 0);
+  tg.addColorStop(0, col.pipeDark);
+  tg.addColorStop(0.4, col.pipe);
+  tg.addColorStop(1, col.pipeDark);
+  ctx.fillStyle = tg;
+  ctx.fillRect(p.x + 4, 0, PIPE_W - 8, p.topH);
+
+  // Top cap
+  ctx.fillStyle = col.pipeCap;
+  roundRect(ctx, p.x, p.topH - CAP_H, PIPE_W, CAP_H, 4);
+  ctx.fill();
+
+  // Bottom pipe body
+  ctx.fillStyle = tg;
+  ctx.fillRect(p.x + 4, botTop, PIPE_W - 8, botH);
+
+  // Bottom cap
+  ctx.fillStyle = col.pipeCap;
+  roundRect(ctx, p.x, botTop, PIPE_W, CAP_H, 4);
+  ctx.fill();
+}
+
+function drawGround(col) {
+  // Dirt
+  ctx.fillStyle = col.ground;
+  ctx.fillRect(0, CH - GROUND_H, CW, GROUND_H);
+  // Grass strip
+  ctx.fillStyle = col.grass;
+  ctx.fillRect(0, CH - GROUND_H, CW, 12);
+  // Ground line
+  ctx.strokeStyle = col.groundTop;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, CH - GROUND_H + 12);
+  ctx.lineTo(CW, CH - GROUND_H + 12);
+  ctx.stroke();
+}
+
+function drawBird(col) {
+  ctx.save();
+  ctx.translate(bird.x, bird.y);
+  ctx.rotate((bird.angle * Math.PI) / 180);
+
+  const r = bird.radius;
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.12)';
+  ctx.beginPath();
+  ctx.ellipse(2, r+2, r*0.8, 4, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Wing (behind body)
+  const wingY = Math.sin(bird.wingPhase) * 6;
+  ctx.fillStyle = col.birdWing;
+  ctx.beginPath();
+  ctx.ellipse(-4, wingY - 4, r * 0.7, r * 0.4, -0.3, 0, Math.PI*2);
+  ctx.fill();
+
+  // Body
+  ctx.fillStyle = col.bird;
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI*2);
+  ctx.fill();
+
+  // Belly
+  ctx.fillStyle = col.birdBelly;
+  ctx.beginPath();
+  ctx.ellipse(3, 4, r*0.5, r*0.35, 0.3, 0, Math.PI*2);
+  ctx.fill();
+
+  // Eye white
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(6, -5, 5, 0, Math.PI*2);
+  ctx.fill();
+
+  // Eye pupil
+  ctx.fillStyle = col.birdEye;
+  ctx.beginPath();
+  ctx.arc(7, -5, 2.5, 0, Math.PI*2);
+  ctx.fill();
+
+  // Eye shine
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(8, -6, 1, 0, Math.PI*2);
+  ctx.fill();
+
+  // Beak
+  ctx.fillStyle = '#ff8c00';
+  ctx.beginPath();
+  ctx.moveTo(r - 2, -3);
+  ctx.lineTo(r + 10, 0);
+  ctx.lineTo(r - 2, 3);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+
+// ─── Input ────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.key === 'ArrowUp') { e.preventDefault(); flap(); }
+});
+canvas.addEventListener('click',     flap);
+canvas.addEventListener('touchstart', e => { e.preventDefault(); flap(); }, { passive: false });
+
+// ─── Theme ────────────────────────────────────────────
+function toggleTheme() {
+  const d = document.documentElement.classList.toggle('dark');
+  document.getElementById('themeBtn').textContent = d ? '🌙' : '🌤';
+  localStorage.setItem('pb-theme', d ? 'dark' : 'light');
+  if (gameState !== 'running') draw();
+}
+
+// ─── Init ─────────────────────────────────────────────
+(function() {
+  const saved = localStorage.getItem('pb-theme');
+  const dark  = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark', dark);
+  document.getElementById('themeBtn').textContent = dark ? '🌙' : '🌤';
+  document.getElementById('statBest').textContent = best;
+  gameState = 'idle';
+  initBird();
+  pipes = [];
+  score = 0;
+  draw();
+})();
+</script>
+</body>
+</html>
