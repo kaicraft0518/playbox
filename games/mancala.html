@@ -40,148 +40,45 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .pb-seg-btn.active{background:var(--accent);color:white;}
 .pb-seg-btn:not(.active):hover{background:var(--accent-bg);color:var(--accent);}
 
-/* Layout */
 .game-wrap{display:flex;flex-direction:column;align-items:center;padding:16px 16px 48px;gap:14px;}
 .game-header{width:100%;max-width:560px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
 .game-title{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:700;letter-spacing:-0.02em;}
-
-/* Selectors */
 .selectors{width:100%;max-width:560px;display:flex;flex-direction:column;gap:8px;}
 .sel-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .sel-label{font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--text2);letter-spacing:0.12em;text-transform:uppercase;min-width:40px;flex-shrink:0;}
-
-/* Turn banner */
-.turn-banner{
-  width:100%;max-width:560px;
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  padding:10px 16px;
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
-}
+.turn-banner{width:100%;max-width:560px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
 .turn-name{font-weight:600;font-size:0.9rem;color:var(--text);}
 .turn-sub{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--text2);letter-spacing:0.08em;}
 .turn-banner.extra-turn{border-color:var(--accent);background:var(--accent-bg);}
 .extra-badge{font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--accent);border:1px solid var(--accent);border-radius:20px;padding:2px 8px;white-space:nowrap;}
-
-/* Board */
-.board-outer{
-  width:100%;max-width:560px;
-  background:var(--surface);border:2px solid var(--border);border-radius:16px;
-  padding:12px;box-shadow:var(--shadow-lg);
-  position:relative;
-}
-
-/* Player labels */
+.board-outer{width:100%;max-width:560px;background:var(--surface);border:2px solid var(--border);border-radius:16px;padding:12px;box-shadow:var(--shadow-lg);position:relative;}
 .player-labels{display:flex;justify-content:space-between;margin-bottom:8px;padding:0 4px;}
 .player-label{font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--text2);letter-spacing:0.1em;text-transform:uppercase;}
 .player-label.active-label{color:var(--accent);font-weight:500;}
-
-/* Board layout: store | pits | store */
 .board-inner{display:flex;gap:8px;align-items:stretch;}
-
-/* Store (ゲームラ) */
-.store{
-  width:64px;flex-shrink:0;
-  border-radius:var(--radius);
-  border:2px solid var(--border);
-  background:var(--surface2);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:6px;padding:8px;
-  position:relative;
-  transition:border-color 0.2s;
-  min-height:160px;
-}
+.store{width:64px;flex-shrink:0;border-radius:var(--radius);border:2px solid var(--border);background:var(--surface2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px;position:relative;transition:border-color 0.2s;min-height:160px;}
 .store.mine{border-color:var(--accent);background:var(--accent-bg);}
 .store-count{font-family:'Fraunces',serif;font-size:2rem;font-weight:700;color:var(--text);line-height:1;}
 .store-label{font-family:'DM Mono',monospace;font-size:0.55rem;color:var(--text2);letter-spacing:0.1em;text-transform:uppercase;text-align:center;}
-
-/* Pits grid */
 .pits-wrap{flex:1;display:flex;flex-direction:column;gap:6px;}
 .pits-row{display:flex;gap:6px;}
-.pit{
-  flex:1;
-  aspect-ratio:1;
-  border-radius:50%;
-  border:2px solid var(--border);
-  background:var(--surface2);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  cursor:pointer;
-  position:relative;
-  transition:border-color 0.15s,background 0.15s,transform 0.15s,box-shadow 0.15s;
-  user-select:none;
-  -webkit-tap-highlight-color:transparent;
-}
-.pit.selectable{
-  border-color:var(--accent);
-  cursor:pointer;
-}
-.pit.selectable:hover,.pit.selectable:active{
-  background:var(--accent-bg);
-  transform:scale(1.08);
-  box-shadow:0 0 0 3px var(--accent-bg), var(--shadow);
-}
-.pit.selected{
-  border-color:var(--accent);
-  background:var(--accent-bg);
-  transform:scale(1.08);
-  box-shadow:0 0 0 4px rgba(42,107,82,0.2), var(--shadow-lg);
-}
-:root.dark .pit.selected{
-  box-shadow:0 0 0 4px rgba(0,196,154,0.2), var(--shadow-lg);
-}
-.pit.highlight{
-  border-color:#f59e0b;
-  background:rgba(245,158,11,0.08);
-  animation:highlightPulse 0.6s ease;
-}
-@keyframes highlightPulse{
-  0%,100%{transform:scale(1);}
-  50%{transform:scale(1.12);}
-}
-.pit.landing{
-  animation:landPulse 0.3s ease;
-}
-@keyframes landPulse{
-  0%{transform:scale(1);}
-  50%{transform:scale(1.15);}
-  100%{transform:scale(1);}
-}
-.pit.disabled{
-  opacity:0.45;cursor:not-allowed;
-}
+.pit{flex:1;aspect-ratio:1;border-radius:50%;border:2px solid var(--border);background:var(--surface2);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:border-color 0.15s,background 0.15s,transform 0.15s,box-shadow 0.15s;user-select:none;-webkit-tap-highlight-color:transparent;}
+.pit.selectable{border-color:var(--accent);cursor:pointer;}
+.pit.selectable:hover,.pit.selectable:active{background:var(--accent-bg);transform:scale(1.08);box-shadow:0 0 0 3px var(--accent-bg),var(--shadow);}
+.pit.highlight{border-color:#f59e0b;background:rgba(245,158,11,0.08);animation:highlightPulse 0.6s ease;}
+@keyframes highlightPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.12);}}
+.pit.landing{animation:landPulse 0.3s ease;}
+@keyframes landPulse{0%{transform:scale(1);}50%{transform:scale(1.15);}100%{transform:scale(1);}}
+.pit.disabled{opacity:0.45;cursor:not-allowed;}
 .pit.empty{opacity:0.35;}
-
-.pit-count{
-  font-family:'Fraunces',serif;font-weight:700;
-  font-size:clamp(0.9rem,2.5vw,1.2rem);
-  color:var(--text);line-height:1;
-}
-.pit-stones{
-  display:flex;flex-wrap:wrap;gap:2px;justify-content:center;
-  max-width:80%;margin-top:2px;
-}
-.stone{
-  width:6px;height:6px;border-radius:50%;
-  background:var(--accent);opacity:0.7;
-  flex-shrink:0;
-}
+.pit-count{font-family:'Fraunces',serif;font-weight:700;font-size:clamp(0.9rem,2.5vw,1.2rem);color:var(--text);line-height:1;}
+.pit-stones{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;max-width:80%;margin-top:2px;}
+.stone{width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:0.7;flex-shrink:0;}
 .stone.enemy{background:var(--accent2);}
-
-/* Thinking overlay */
-.thinking-bar{
-  width:100%;max-width:560px;
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  padding:8px 14px;
-  display:none;align-items:center;gap:10px;
-}
+.thinking-bar{width:100%;max-width:560px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:8px 14px;display:none;align-items:center;gap:10px;}
 .thinking-bar.show{display:flex;}
-.thinking-dots{
-  font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--accent);
-  letter-spacing:0.15em;
-  animation:pulse 1s ease infinite;
-}
+.thinking-dots{font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--accent);letter-spacing:0.15em;animation:pulse 1s ease infinite;}
 @keyframes pulse{0%,100%{opacity:0.5;}50%{opacity:1;}}
-
-/* Result */
 .result-overlay{display:none;position:fixed;inset:0;background:rgba(245,245,242,0.93);z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:14px;text-align:center;padding:20px;}
 :root.dark .result-overlay{background:rgba(10,10,15,0.92);}
 .result-overlay.show{display:flex;}
@@ -192,12 +89,36 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .result-score-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 20px;text-align:center;}
 .result-score-val{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:700;color:var(--text);}
 .result-score-label{font-size:0.72rem;color:var(--text2);font-family:'DM Mono',monospace;letter-spacing:0.08em;margin-top:2px;}
-
-/* Rules hint */
 .rules-hint{width:100%;max-width:560px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;}
 .rules-title{font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--text2);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:8px;}
 .rules-text{font-size:0.75rem;color:var(--text2);line-height:1.8;}
 .rules-text b{color:var(--text);}
+
+/* Online */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;padding:16px;}
+.modal-overlay.show{display:flex;}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:16px;box-shadow:var(--shadow-lg);}
+.modal-title{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700;color:var(--text);}
+.modal-sub{font-size:0.78rem;color:var(--text2);line-height:1.6;}
+.match-tabs{display:flex;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;}
+.match-tab{flex:1;padding:8px 6px;background:transparent;border:none;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:0.75rem;font-weight:500;cursor:pointer;transition:all var(--transition);white-space:nowrap;}
+.match-tab+.match-tab{border-left:1px solid var(--border);}
+.match-tab.active{background:var(--accent);color:#fff;}
+.match-panel{display:none;flex-direction:column;gap:10px;}
+.match-panel.show{display:flex;}
+.room-code-display{font-family:'DM Mono',monospace;font-size:2.2rem;font-weight:700;color:var(--accent);letter-spacing:0.2em;text-align:center;padding:16px;background:var(--accent-bg);border-radius:var(--radius);border:1px solid var(--accent);}
+.room-code-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:1.4rem;letter-spacing:0.2em;text-align:center;text-transform:uppercase;outline:none;transition:border-color 0.2s;}
+.room-code-input:focus{border-color:var(--accent);}
+.match-status{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text2);text-align:center;letter-spacing:0.1em;}
+.match-status.ok{color:var(--accent);}
+.match-status.err{color:var(--accent2);}
+.url-display{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;word-break:break-all;cursor:pointer;}
+.url-display:hover{border-color:var(--accent);color:var(--accent);}
+.online-status-bar{width:100%;max-width:560px;background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius);padding:8px 14px;display:none;align-items:center;justify-content:space-between;gap:8px;}
+.online-status-bar.show{display:flex;}
+.online-status-text{font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--accent);letter-spacing:0.08em;}
+.online-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:blink 1.5s ease infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
 </style>
 </head>
 <body>
@@ -211,19 +132,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </nav>
 
 <div class="game-wrap">
-
   <div class="game-header">
     <div class="game-title">マンカラ</div>
     <button class="pb-btn primary" onclick="newGame()">▶ NEW</button>
   </div>
 
-  <!-- Selectors -->
   <div class="selectors">
     <div class="sel-row">
       <span class="sel-label">モード</span>
       <div class="pb-seg" id="modeSeg">
-        <button class="pb-seg-btn active" onclick="setMode('cpu')">🤖 CPU対戦</button>
-        <button class="pb-seg-btn" onclick="setMode('2p')">👥 2人対戦</button>
+        <button class="pb-seg-btn active" onclick="setMode('cpu')">🤖 CPU</button>
+        <button class="pb-seg-btn" onclick="setMode('2p')">👥 2人</button>
+        <button class="pb-seg-btn" onclick="setMode('online')">🌐 オンライン</button>
       </div>
     </div>
     <div class="sel-row" id="cpuRow">
@@ -238,7 +158,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
   </div>
 
-  <!-- Turn banner -->
+  <div class="online-status-bar" id="onlineStatusBar">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="online-dot"></div>
+      <span class="online-status-text" id="onlineStatusText">接続中…</span>
+    </div>
+    <button class="pb-btn" style="padding:4px 10px;font-size:0.72rem;" onclick="leaveRoom()">退出</button>
+  </div>
+
   <div class="turn-banner" id="turnBanner">
     <div>
       <div class="turn-name" id="turnName">あなたの番</div>
@@ -247,42 +174,26 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <span class="extra-badge" id="extraBadge" style="display:none;">もう一度！</span>
   </div>
 
-  <!-- Thinking bar -->
   <div class="thinking-bar" id="thinkingBar">
     <span class="thinking-dots">● ● ●</span>
-    <span style="font-size:0.78rem;color:var(--text2);">CPUが考えています…</span>
+    <span style="font-size:0.78rem;color:var(--text2);" id="thinkingLabel">CPUが考えています…</span>
   </div>
 
-  <!-- Board -->
   <div class="board-outer">
     <div class="player-labels">
-      <span class="player-label" id="labelP2">プレイヤー2（上）</span>
+      <span class="player-label" id="labelP2">P2（上）</span>
       <span class="player-label" id="labelP1">あなた（下）</span>
     </div>
     <div class="board-inner">
-      <!-- P2's store (left) -->
-      <div class="store" id="storeP2">
-        <div class="store-count" id="storeCountP2">0</div>
-        <div class="store-label">P2<br>ゲームラ</div>
-      </div>
-
-      <!-- Pits -->
+      <div class="store" id="storeP2"><div class="store-count" id="storeCountP2">0</div><div class="store-label">P2<br>ゲームラ</div></div>
       <div class="pits-wrap">
-        <!-- P2's pits (top row, right to left: pit5→pit0) -->
         <div class="pits-row" id="rowP2"></div>
-        <!-- P1's pits (bottom row, left to right: pit0→pit5) -->
         <div class="pits-row" id="rowP1"></div>
       </div>
-
-      <!-- P1's store (right) -->
-      <div class="store" id="storeP1">
-        <div class="store-count" id="storeCountP1">0</div>
-        <div class="store-label">あなた<br>ゲームラ</div>
-      </div>
+      <div class="store" id="storeP1"><div class="store-count" id="storeCountP1">0</div><div class="store-label">あなた<br>ゲームラ</div></div>
     </div>
   </div>
 
-  <!-- Rules -->
   <div class="rules-hint">
     <div class="rules-title">ルール</div>
     <div class="rules-text">
@@ -292,539 +203,318 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <b>ゲームラの石が多い方の勝ち。</b>
     </div>
   </div>
-
 </div>
 
-<!-- Result -->
 <div class="result-overlay" id="resultOverlay">
   <div class="result-emoji" id="resEmoji">🏆</div>
   <div class="result-title" id="resTitle"></div>
   <div class="result-scores">
-    <div class="result-score-box">
-      <div class="result-score-val" id="resS1">—</div>
-      <div class="result-score-label" id="resL1">あなた</div>
-    </div>
-    <div class="result-score-box">
-      <div class="result-score-val" id="resS2">—</div>
-      <div class="result-score-label" id="resL2">CPU</div>
-    </div>
+    <div class="result-score-box"><div class="result-score-val" id="resS1">—</div><div class="result-score-label" id="resL1">あなた</div></div>
+    <div class="result-score-box"><div class="result-score-val" id="resS2">—</div><div class="result-score-label" id="resL2">CPU</div></div>
   </div>
-  <div style="display:flex;gap:8px;margin-top:8px;">
+  <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;justify-content:center;">
     <button class="pb-btn" onclick="document.getElementById('resultOverlay').classList.remove('show')">閉じる</button>
     <button class="pb-btn primary" onclick="newGame();document.getElementById('resultOverlay').classList.remove('show')">もう一度</button>
   </div>
 </div>
 
+<!-- Online Modal -->
+<div class="modal-overlay" id="matchModal">
+  <div class="modal-box">
+    <div class="modal-title">🌐 オンライン対戦</div>
+    <div class="match-tabs">
+      <button class="match-tab active" onclick="switchMatchTab('create')">ルームを作る</button>
+      <button class="match-tab" onclick="switchMatchTab('join')">コードで入る</button>
+      <button class="match-tab" onclick="switchMatchTab('random')">ランダム</button>
+    </div>
+    <div class="match-panel show" id="panelCreate">
+      <div class="modal-sub">ルームを作成してコードを友達に教えてください。</div>
+      <div class="room-code-display" id="createdCode">----</div>
+      <div class="url-display" id="shareUrl" onclick="copyUrl()" title="クリックでコピー">URLを生成中…</div>
+      <div class="match-status" id="createStatus">相手の入室を待っています…</div>
+      <button class="pb-btn" onclick="closeMatchModal()">キャンセル</button>
+    </div>
+    <div class="match-panel" id="panelJoin">
+      <div class="modal-sub">4桁のルームコードを入力してください。</div>
+      <input class="room-code-input" id="joinCodeInput" maxlength="4" placeholder="ABCD" oninput="this.value=this.value.toUpperCase()">
+      <div class="match-status" id="joinStatus"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="pb-btn primary" onclick="joinByCode()">入室する</button>
+        <button class="pb-btn" onclick="closeMatchModal()">キャンセル</button>
+      </div>
+    </div>
+    <div class="match-panel" id="panelRandom">
+      <div class="modal-sub">空きルームを自動で探します。見つからない場合は新しく作成します。</div>
+      <div class="match-status" id="randomStatus">ボタンを押してマッチングを開始</div>
+      <div style="display:flex;gap:8px;">
+        <button class="pb-btn primary" onclick="startRandom()">🔍 マッチング開始</button>
+        <button class="pb-btn" onclick="closeMatchModal()">キャンセル</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, set, get, update, onValue, off, remove } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+const app = initializeApp({apiKey:"AIzaSyC2Jm2dzBBu6jWjAGVFda9V86SQKPObNAU",authDomain:"playbox-database.firebaseapp.com",databaseURL:"https://playbox-database-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"playbox-database",storageBucket:"playbox-database.firebasestorage.app",messagingSenderId:"608200798614",appId:"1:608200798614:web:2ecc32e71ba54e06e3edb7"});
+const db=getDatabase(app);
+window._fb={db,ref,set,get,update,onValue,off,remove};
+window.dispatchEvent(new Event('fb-ready'));
+</script>
+
 <script>
-// ═══════════════════════════════════════════════════════
-// BOARD LAYOUT
-// Board array: [p1_pit0..p1_pit5, p1_store, p2_pit0..p2_pit5, p2_store]
-// Indices:       0  1  2  3  4  5     6       7  8  9 10 11 12    13
-// P1 = player 1 (human in CPU mode, bottom row)
-// P2 = player 2 (CPU or P2, top row)
-// P1 pits: 0-5,  P1 store: 6
-// P2 pits: 7-12, P2 store: 13
-// Sowing goes: P1 → 0→1→2→3→4→5→6(store)→7→8→9→10→11→12→(skip 13)→0...
-// For P2:      7→8→9→10→11→12→13(store)→0→1→2→3→4→5→(skip 6)→7...
-// ═══════════════════════════════════════════════════════
-const P1_PITS  = [0,1,2,3,4,5];
-const P1_STORE = 6;
-const P2_PITS  = [7,8,9,10,11,12];
-const P2_STORE = 13;
-const TOTAL    = 14;
+const P1_PITS=[0,1,2,3,4,5],P1_STORE=6,P2_PITS=[7,8,9,10,11,12],P2_STORE=13,TOTAL=14;
+const CPU_DEPTHS=[1,1,3,5,7];
+let gameMode='cpu',cpuLevel=1;
+let pits=[],current=1,animating=false,gameOver=false;
+let onlineRoomId=null,onlineMyPlayer=null,onlineListener=null,fbReady=false;
 
-const CPU_DEPTHS = [1, 1, 3, 5, 7];
+window.addEventListener('fb-ready',()=>{fbReady=true;checkUrlRoom();});
+function checkUrlRoom(){const p=new URLSearchParams(location.search);const c=p.get('room');if(c){openMatchModal();switchMatchTab('join');document.getElementById('joinCodeInput').value=c.toUpperCase();setTimeout(joinByCode,500);}}
 
-// ═══════════════════════════════════════════════════════
-// SETTINGS
-// ═══════════════════════════════════════════════════════
-let gameMode  = 'cpu';
-let cpuLevel  = 1;
-
-function setMode(m) {
-  gameMode = m;
-  document.querySelectorAll('#modeSeg .pb-seg-btn').forEach((b,i)=>b.classList.toggle('active',i===(m==='cpu'?0:1)));
-  document.getElementById('cpuRow').style.display = m==='cpu' ? '' : 'none';
+function setMode(m){
+  if(m==='online'){openMatchModal();return;}
+  if(gameMode==='online')leaveRoom();
+  gameMode=m;
+  document.querySelectorAll('#modeSeg .pb-seg-btn').forEach((b,i)=>b.classList.toggle('active',['cpu','2p','online'][i]===m));
+  document.getElementById('cpuRow').style.display=m==='cpu'?'':'none';
+  document.getElementById('onlineStatusBar').classList.remove('show');
   newGame();
 }
+function setCPU(lvl){cpuLevel=lvl;document.querySelectorAll('#cpuSeg .pb-seg-btn').forEach((b,i)=>b.classList.toggle('active',i===lvl));newGame();}
 
-function setCPU(lvl) {
-  cpuLevel = lvl;
-  document.querySelectorAll('#cpuSeg .pb-seg-btn').forEach((b,i)=>b.classList.toggle('active',i===lvl));
-  newGame();
+function getPlayerPits(p){return p===1?P1_PITS:P2_PITS;}
+function getPlayerStore(p){return p===1?P1_STORE:P2_STORE;}
+function getOpponentStore(p){return p===1?P2_STORE:P1_STORE;}
+function getCPULevelName(){return['（弱）','（中）','（強）','（超強）','（最強）'][cpuLevel];}
+
+function updateLabels(){
+  if(gameMode==='cpu'){
+    document.getElementById('labelP1').textContent='あなた（下）';
+    document.getElementById('labelP2').textContent=`CPU ${getCPULevelName()}（上）`;
+    document.getElementById('storeP1').querySelector('.store-label').textContent='あなた\nゲームラ';
+    document.getElementById('storeP2').querySelector('.store-label').textContent='CPU\nゲームラ';
+    document.getElementById('resL1').textContent='あなた';
+    document.getElementById('resL2').textContent=`CPU ${getCPULevelName()}`;
+  } else if(gameMode==='online'){
+    const myLabel=onlineMyPlayer===1?'あなた（下）':'あなた（上）';
+    const opLabel=onlineMyPlayer===1?'相手（上）':'相手（下）';
+    document.getElementById('labelP1').textContent=onlineMyPlayer===1?myLabel:opLabel;
+    document.getElementById('labelP2').textContent=onlineMyPlayer===2?myLabel:opLabel;
+    document.getElementById('storeP1').querySelector('.store-label').textContent=onlineMyPlayer===1?'あなた\nゲームラ':'相手\nゲームラ';
+    document.getElementById('storeP2').querySelector('.store-label').textContent=onlineMyPlayer===2?'あなた\nゲームラ':'相手\nゲームラ';
+    document.getElementById('resL1').textContent=onlineMyPlayer===1?'あなた':'相手';
+    document.getElementById('resL2').textContent=onlineMyPlayer===2?'あなた':'相手';
+  } else {
+    document.getElementById('labelP1').textContent='プレイヤー1（下）';
+    document.getElementById('labelP2').textContent='プレイヤー2（上）';
+    document.getElementById('storeP1').querySelector('.store-label').textContent='P1\nゲームラ';
+    document.getElementById('storeP2').querySelector('.store-label').textContent='P2\nゲームラ';
+    document.getElementById('resL1').textContent='プレイヤー1';
+    document.getElementById('resL2').textContent='プレイヤー2';
+  }
 }
 
-// ═══════════════════════════════════════════════════════
-// GAME STATE
-// ═══════════════════════════════════════════════════════
-let pits      = [];
-let current   = 1;  // 1 or 2
-let animating = false;
-let gameOver  = false;
-
-function newGame() {
-  pits = Array(TOTAL).fill(4);
-  pits[P1_STORE] = 0;
-  pits[P2_STORE] = 0;
-  current   = 1;
-  animating = false;
-  gameOver  = false;
+function newGame(){
+  pits=Array(TOTAL).fill(4);pits[P1_STORE]=0;pits[P2_STORE]=0;
+  current=1;animating=false;gameOver=false;
   document.getElementById('resultOverlay').classList.remove('show');
   document.getElementById('thinkingBar').classList.remove('show');
-  document.getElementById('extraBadge').style.display = 'none';
-  updateLabels();
-  render();
-  updateTurnBanner(false);
+  document.getElementById('extraBadge').style.display='none';
+  updateLabels();render();updateTurnBanner(false);
+  if(gameMode==='online'&&onlineRoomId&&onlineMyPlayer===1)pushOnlineState();
 }
 
-function updateLabels() {
-  const names = getCPULevelName();
-  if (gameMode === 'cpu') {
-    document.getElementById('labelP1').textContent = 'あなた（下）';
-    document.getElementById('labelP2').textContent = `CPU ${names}（上）`;
-    document.getElementById('storeP1').querySelector('.store-label').textContent = 'あなた\nゲームラ';
-    document.getElementById('storeP2').querySelector('.store-label').textContent = 'CPU\nゲームラ';
-    document.getElementById('resL1').textContent = 'あなた';
-    document.getElementById('resL2').textContent = `CPU ${names}`;
-  } else {
-    document.getElementById('labelP1').textContent = 'プレイヤー1（下）';
-    document.getElementById('labelP2').textContent = 'プレイヤー2（上）';
-    document.getElementById('storeP1').querySelector('.store-label').textContent = 'P1\nゲームラ';
-    document.getElementById('storeP2').querySelector('.store-label').textContent = 'P2\nゲームラ';
-    document.getElementById('resL1').textContent = 'プレイヤー1';
-    document.getElementById('resL2').textContent = 'プレイヤー2';
-  }
+function applyMove(p,pitIdx,player){
+  const np=[...p];const stones=np[pitIdx];np[pitIdx]=0;
+  const oppStore=getOpponentStore(player);const myPits=getPlayerPits(player);const myStore=getPlayerStore(player);
+  let idx=pitIdx,lastIdx=-1;
+  for(let i=0;i<stones;i++){idx=(idx+1)%TOTAL;if(idx===oppStore)idx=(idx+1)%TOTAL;np[idx]++;lastIdx=idx;}
+  const extraTurn=lastIdx===myStore;
+  if(!extraTurn&&myPits.includes(lastIdx)&&np[lastIdx]===1){const oppIdx=12-lastIdx;if(np[oppIdx]>0){np[myStore]+=np[oppIdx]+1;np[oppIdx]=0;np[lastIdx]=0;}}
+  return{newPits:np,extraTurn,lastIdx};
+}
+function getValidMoves(p,player){return getPlayerPits(player).filter(i=>p[i]>0);}
+function checkGameOver(p){return P1_PITS.every(i=>p[i]===0)||P2_PITS.every(i=>p[i]===0);}
+function finalizeBoard(p){const np=[...p];P1_PITS.forEach(i=>{np[P1_STORE]+=np[i];np[i]=0;});P2_PITS.forEach(i=>{np[P2_STORE]+=np[i];np[i]=0;});return np;}
+
+function getSowSeq(p,fromIdx,player){const os=getOpponentStore(player);const seq=[];let idx=fromIdx;const st=p[fromIdx];for(let i=0;i<st;i++){idx=(idx+1)%TOTAL;if(idx===os)idx=(idx+1)%TOTAL;seq.push(idx);}return seq;}
+
+function evaluate(p,player){
+  const ms=getPlayerStore(player),os=getOpponentStore(player);let score=p[ms]-p[os];
+  if(cpuLevel>=2)getPlayerPits(player).forEach(i=>{if(p[i]>0){const s=getSowSeq(p,i,player);if(s[s.length-1]===ms)score+=3;}});
+  if(cpuLevel===0)return Math.random()*20-10;if(cpuLevel===1)return score+(Math.random()*8-4);if(cpuLevel===2)return score+(Math.random()*3-1.5);return score;
+}
+function minimax(p,depth,alpha,beta,player,maxPlayer){
+  if(depth===0||checkGameOver(p))return evaluate(checkGameOver(p)?finalizeBoard(p):p,maxPlayer);
+  const moves=getValidMoves(p,player);if(!moves.length)return evaluate(p,maxPlayer);
+  if(player===maxPlayer){let best=-Infinity;for(const m of moves){const{newPits,extraTurn}=applyMove(p,m,player);const next=extraTurn?player:(player===1?2:1);const v=minimax(newPits,extraTurn?depth:depth-1,alpha,beta,next,maxPlayer);best=Math.max(best,v);alpha=Math.max(alpha,v);if(beta<=alpha)break;}return best;}
+  else{let best=Infinity;for(const m of moves){const{newPits,extraTurn}=applyMove(p,m,player);const next=extraTurn?player:(player===1?2:1);const v=minimax(newPits,extraTurn?depth:depth-1,alpha,beta,next,maxPlayer);best=Math.min(best,v);beta=Math.min(beta,v);if(beta<=alpha)break;}return best;}
+}
+function getBestMove(p,player){const moves=getValidMoves(p,player);if(!moves.length)return null;if(cpuLevel===0)return moves[Math.floor(Math.random()*moves.length)];const d=CPU_DEPTHS[cpuLevel];let bv=-Infinity,bm=moves[0];for(const m of moves){const{newPits,extraTurn}=applyMove(p,m,player);const next=extraTurn?player:(player===1?2:1);const v=minimax(newPits,d-1,-Infinity,Infinity,next,player);if(v>bv){bv=v;bm=m;}}return bm;}
+
+function animateSow(pitIdx,player,callback){
+  animating=true;const oppStore=getOpponentStore(player);const stones=pits[pitIdx];
+  const seq=[];let idx=pitIdx;for(let i=0;i<stones;i++){idx=(idx+1)%TOTAL;if(idx===oppStore)idx=(idx+1)%TOTAL;seq.push(idx);}
+  pits[pitIdx]=0;render(pitIdx,-1,[]);
+  let step=0;
+  function doStep(){if(step>=seq.length){animating=false;callback(seq[seq.length-1]);return;}const target=seq[step];pits[target]++;step++;render(pitIdx,target,seq.slice(0,step));setTimeout(doStep,120);}
+  setTimeout(doStep,60);
 }
 
-function getCPULevelName() {
-  return ['（弱）','（中）','（強）','（超強）','（最強）'][cpuLevel];
+function onPitClick(pitIdx){
+  if(animating||gameOver)return;
+  if(gameMode==='cpu'&&current!==1)return;
+  if(gameMode==='online'&&current!==onlineMyPlayer)return;
+  if(!getPlayerPits(current).includes(pitIdx))return;
+  if(pits[pitIdx]===0)return;
+  document.getElementById('extraBadge').style.display='none';
+  animateSow(pitIdx,current,afterMove);
 }
 
-// ═══════════════════════════════════════════════════════
-// MANCALA LOGIC
-// ═══════════════════════════════════════════════════════
-function getPlayerPits(player) { return player===1 ? P1_PITS : P2_PITS; }
-function getPlayerStore(player){ return player===1 ? P1_STORE : P2_STORE; }
-function getOpponentStore(player){ return player===1 ? P2_STORE : P1_STORE; }
-
-// Get sowing sequence from pit index for given player
-function getSowSequence(fromIdx, player) {
-  const oppStore = getOpponentStore(player);
-  const seq = [];
-  let idx = fromIdx;
-  const stones = pits[fromIdx];
-  for (let i = 0; i < stones; i++) {
-    idx = (idx + 1) % TOTAL;
-    if (idx === oppStore) idx = (idx + 1) % TOTAL; // skip opponent's store
-    seq.push(idx);
-  }
-  return seq;
+function afterMove(lastIdx){
+  handleCapture(lastIdx,current);
+  if(checkGameOver(pits)){pits=finalizeBoard(pits);render();if(gameMode==='online')pushOnlineState();setTimeout(endGame,600);return;}
+  const myStore=getPlayerStore(current);const extraTurnNow=lastIdx===myStore;
+  if(extraTurnNow){document.getElementById('extraBadge').style.display='';updateTurnBanner(true);render();if(gameMode==='online')pushOnlineState();if(gameMode==='cpu'&&current===2)setTimeout(doCPUMove,800);return;}
+  current=current===1?2:1;document.getElementById('extraBadge').style.display='none';updateTurnBanner(false);render();
+  if(gameMode==='online')pushOnlineState();
+  if(gameMode==='cpu'&&current===2)setTimeout(doCPUMove,400);
 }
 
-// Apply a move, returns { newPits, extraTurn, captured }
-function applyMove(p, pitIdx, player) {
-  const np = [...p];
-  const stones = np[pitIdx];
-  np[pitIdx] = 0;
-  const oppStore = getOpponentStore(player);
-  const myPits   = getPlayerPits(player);
-  const myStore  = getPlayerStore(player);
-
-  let idx = pitIdx;
-  let lastIdx = -1;
-  for (let i = 0; i < stones; i++) {
-    idx = (idx + 1) % TOTAL;
-    if (idx === oppStore) idx = (idx + 1) % TOTAL;
-    np[idx]++;
-    lastIdx = idx;
-  }
-
-  // Extra turn?
-  const extraTurn = lastIdx === myStore;
-
-  // Capture: last stone lands in own empty pit (was empty before sowing)
-  let captured = false;
-  if (!extraTurn && myPits.includes(lastIdx) && np[lastIdx] === 1) {
-    const oppIdx = 12 - lastIdx; // mirror index: 0↔12, 1↔11, 2↔10, 3↔9, 4↔8, 5↔7
-    if (np[oppIdx] > 0) {
-      np[myStore] += np[oppIdx] + 1;
-      np[oppIdx] = 0;
-      np[lastIdx] = 0;
-      captured = true;
-    }
-  }
-
-  return { newPits: np, extraTurn, captured, lastIdx };
+function handleCapture(lastIdx,player){
+  const myPits=getPlayerPits(player);const myStore=getPlayerStore(player);
+  if(!myPits.includes(lastIdx))return;if(pits[lastIdx]!==1)return;
+  const oppIdx=12-lastIdx;if(pits[oppIdx]>0){pits[myStore]+=pits[oppIdx]+1;pits[oppIdx]=0;pits[lastIdx]=0;}
 }
 
-function getValidMoves(p, player) {
-  return getPlayerPits(player).filter(i => p[i] > 0);
-}
-
-function checkGameOver(p) {
-  const p1Empty = P1_PITS.every(i => p[i] === 0);
-  const p2Empty = P2_PITS.every(i => p[i] === 0);
-  return p1Empty || p2Empty;
-}
-
-function finalizeBoard(p) {
-  const np = [...p];
-  // Remaining stones go to respective stores
-  P1_PITS.forEach(i => { np[P1_STORE] += np[i]; np[i] = 0; });
-  P2_PITS.forEach(i => { np[P2_STORE] += np[i]; np[i] = 0; });
-  return np;
-}
-
-// ═══════════════════════════════════════════════════════
-// AI
-// ═══════════════════════════════════════════════════════
-function evaluate(p, player) {
-  const myStore  = getPlayerStore(player);
-  const oppStore = getOpponentStore(player);
-  let score = p[myStore] - p[oppStore];
-
-  // Bonus for extra turn opportunities
-  if (cpuLevel >= 2) {
-    getPlayerPits(player).forEach(i => {
-      if (p[i] > 0) {
-        const seq = getSowSequenceFromPits(p, i, player);
-        if (seq[seq.length-1] === myStore) score += 3;
-      }
-    });
-  }
-
-  // Noise for weaker levels
-  if (cpuLevel === 0) return Math.random() * 20 - 10;
-  if (cpuLevel === 1) return score + (Math.random() * 8 - 4);
-  if (cpuLevel === 2) return score + (Math.random() * 3 - 1.5);
-  return score;
-}
-
-function getSowSequenceFromPits(p, fromIdx, player) {
-  const oppStore = getOpponentStore(player);
-  const seq = [];
-  let idx = fromIdx;
-  const stones = p[fromIdx];
-  for (let i = 0; i < stones; i++) {
-    idx = (idx + 1) % TOTAL;
-    if (idx === oppStore) idx = (idx + 1) % TOTAL;
-    seq.push(idx);
-  }
-  return seq;
-}
-
-function minimax(p, depth, alpha, beta, player, maxPlayer) {
-  if (depth === 0 || checkGameOver(p)) {
-    return evaluate(checkGameOver(p) ? finalizeBoard(p) : p, maxPlayer);
-  }
-  const moves = getValidMoves(p, player);
-  if (moves.length === 0) return evaluate(p, maxPlayer);
-
-  if (player === maxPlayer) {
-    let best = -Infinity;
-    for (const m of moves) {
-      const { newPits, extraTurn } = applyMove(p, m, player);
-      const next = extraTurn ? player : (player === 1 ? 2 : 1);
-      const val = minimax(newPits, extraTurn ? depth : depth-1, alpha, beta, next, maxPlayer);
-      best = Math.max(best, val);
-      alpha = Math.max(alpha, val);
-      if (beta <= alpha) break;
-    }
-    return best;
-  } else {
-    let best = Infinity;
-    for (const m of moves) {
-      const { newPits, extraTurn } = applyMove(p, m, player);
-      const next = extraTurn ? player : (player === 1 ? 2 : 1);
-      const val = minimax(newPits, extraTurn ? depth : depth-1, alpha, beta, next, maxPlayer);
-      best = Math.min(best, val);
-      beta = Math.min(beta, val);
-      if (beta <= alpha) break;
-    }
-    return best;
-  }
-}
-
-function getBestMove(p, player) {
-  const moves = getValidMoves(p, player);
-  if (moves.length === 0) return null;
-  if (cpuLevel === 0) return moves[Math.floor(Math.random() * moves.length)];
-
-  const depth = CPU_DEPTHS[cpuLevel];
-  let bestVal = -Infinity, bestMove = moves[0];
-  for (const m of moves) {
-    const { newPits, extraTurn } = applyMove(p, m, player);
-    const next = extraTurn ? player : (player===1?2:1);
-    const val = minimax(newPits, depth-1, -Infinity, Infinity, next, player);
-    if (val > bestVal) { bestVal = val; bestMove = m; }
-  }
-  return bestMove;
-}
-
-// ═══════════════════════════════════════════════════════
-// ANIMATION
-// ═══════════════════════════════════════════════════════
-function animateSow(pitIdx, player, callback) {
-  animating = true;
-  const oppStore = getOpponentStore(player);
-  const stones   = pits[pitIdx];
-
-  // Gather sequence
-  const seq = [];
-  let idx = pitIdx;
-  for (let i = 0; i < stones; i++) {
-    idx = (idx + 1) % TOTAL;
-    if (idx === oppStore) idx = (idx + 1) % TOTAL;
-    seq.push(idx);
-  }
-
-  // Clear source pit immediately
-  pits[pitIdx] = 0;
-  render(pitIdx, -1, []);
-
-  let step = 0;
-  function doStep() {
-    if (step >= seq.length) {
-      animating = false;
-      callback(seq[seq.length - 1]);
-      return;
-    }
-    const target = seq[step];
-    pits[target]++;
-    step++;
-    render(pitIdx, target, seq.slice(0, step));
-    setTimeout(doStep, 120);
-  }
-  setTimeout(doStep, 60);
-}
-
-// ═══════════════════════════════════════════════════════
-// HUMAN MOVE
-// ═══════════════════════════════════════════════════════
-function onPitClick(pitIdx) {
-  if (animating || gameOver) return;
-  if (gameMode === 'cpu' && current !== 1) return;
-  if (!getPlayerPits(current).includes(pitIdx)) return;
-  if (pits[pitIdx] === 0) return;
-
-  document.getElementById('extraBadge').style.display = 'none';
-  animateSow(pitIdx, current, afterMove);
-}
-
-function afterMove(lastIdx) {
-  // Apply capture logic
-  const { newPits, extraTurn, captured } = applyMove(
-    pits.map((v,i)=> i === P1_STORE||i===P2_STORE ? v : v), // already applied via animation
-    -1, current // dummy — we re-apply cleanly
-  );
-  // Actually re-apply from scratch to get capture
-  // Re-run applyMove on original (before animation) — we need to redo properly
-  // Instead, handle capture after animation:
-  handleCapture(lastIdx, current);
-
-  if (checkGameOver(pits)) {
-    pits = finalizeBoard(pits);
-    render();
-    setTimeout(endGame, 600);
-    return;
-  }
-
-  const myStore = getPlayerStore(current);
-  const extraTurnNow = lastIdx === myStore;
-
-  if (extraTurnNow) {
-    document.getElementById('extraBadge').style.display = '';
-    updateTurnBanner(true);
-    render();
-    if (gameMode === 'cpu' && current === 2) {
-      setTimeout(doCPUMove, 800);
-    }
-    return;
-  }
-
-  // Switch turn
-  current = current === 1 ? 2 : 1;
-  document.getElementById('extraBadge').style.display = 'none';
-  updateTurnBanner(false);
-  render();
-
-  if (gameMode === 'cpu' && current === 2) {
-    setTimeout(doCPUMove, 400);
-  }
-}
-
-function handleCapture(lastIdx, player) {
-  const myPits  = getPlayerPits(player);
-  const myStore = getPlayerStore(player);
-  if (!myPits.includes(lastIdx)) return;
-  if (pits[lastIdx] !== 1) return; // was empty before (now has 1 = just landed)
-  const oppIdx = 12 - lastIdx;
-  if (pits[oppIdx] > 0) {
-    pits[myStore] += pits[oppIdx] + 1;
-    pits[oppIdx]  = 0;
-    pits[lastIdx] = 0;
-  }
-}
-
-// ═══════════════════════════════════════════════════════
-// CPU MOVE
-// ═══════════════════════════════════════════════════════
-function doCPUMove() {
-  if (gameOver || animating) return;
+function doCPUMove(){
+  if(gameOver||animating)return;
   document.getElementById('thinkingBar').classList.add('show');
-
-  const delay = 400 + cpuLevel * 150;
-  setTimeout(() => {
-    document.getElementById('thinkingBar').classList.remove('show');
-    const move = getBestMove(pits, 2);
-    if (!move && move !== 0) {
-      current = 1; updateTurnBanner(false); render(); return;
-    }
-    document.getElementById('extraBadge').style.display = 'none';
-    animateSow(move, 2, afterMove);
-  }, delay);
+  setTimeout(()=>{document.getElementById('thinkingBar').classList.remove('show');const move=getBestMove(pits,2);if(!move&&move!==0){current=1;updateTurnBanner(false);render();return;}document.getElementById('extraBadge').style.display='none';animateSow(move,2,afterMove);},400+cpuLevel*150);
 }
 
-// ═══════════════════════════════════════════════════════
-// TURN BANNER
-// ═══════════════════════════════════════════════════════
-function updateTurnBanner(extra) {
-  const banner = document.getElementById('turnBanner');
-  const name   = document.getElementById('turnName');
-  const sub    = document.getElementById('turnSub');
-
+function updateTurnBanner(extra){
+  const banner=document.getElementById('turnBanner');const name=document.getElementById('turnName');const sub=document.getElementById('turnSub');
   let playerName;
-  if (gameMode === 'cpu') {
-    playerName = current === 1 ? 'あなたの番' : `CPU${getCPULevelName()}の番`;
-  } else {
-    playerName = current === 1 ? 'プレイヤー1の番' : 'プレイヤー2の番';
-  }
-
-  name.textContent = playerName;
-  sub.textContent  = extra ? 'もう一度選んでください！' : (current===1||(gameMode==='2p') ? '穴を選んでください' : '考えています…');
-  banner.className = 'turn-banner' + (extra ? ' extra-turn' : '');
+  if(gameMode==='cpu'){playerName=current===1?'あなたの番':`CPU${getCPULevelName()}の番`;}
+  else if(gameMode==='online'){playerName=current===onlineMyPlayer?'あなたの番':'相手の番';}
+  else{playerName=current===1?'プレイヤー1の番':'プレイヤー2の番';}
+  name.textContent=playerName;sub.textContent=extra?'もう一度選んでください！':(current===1||(gameMode==='2p')?'穴を選んでください':'考えています…');
+  banner.className='turn-banner'+(extra?' extra-turn':'');
 }
 
-// ═══════════════════════════════════════════════════════
-// RENDER
-// ═══════════════════════════════════════════════════════
-function render(selected=-1, landing=-1, trail=[]) {
-  // Stores
-  document.getElementById('storeCountP1').textContent = pits[P1_STORE];
-  document.getElementById('storeCountP2').textContent = pits[P2_STORE];
-
-  const s1 = document.getElementById('storeP1');
-  const s2 = document.getElementById('storeP2');
-  s1.className = 'store' + (current===1&&!gameOver?' mine':'');
-  s2.className = 'store' + (current===2&&!gameOver?' mine':'');
-
-  // P1 pits (bottom row, left to right: 0→5)
-  const rowP1 = document.getElementById('rowP1');
-  rowP1.innerHTML = '';
-  for (const i of P1_PITS) {
-    rowP1.appendChild(makePit(i, 1, selected, landing, trail));
-  }
-
-  // P2 pits (top row, RIGHT to LEFT: 12→7, so visually mirrors P1)
-  const rowP2 = document.getElementById('rowP2');
-  rowP2.innerHTML = '';
-  for (const i of [...P2_PITS].reverse()) {
-    rowP2.appendChild(makePit(i, 2, selected, landing, trail));
-  }
-
-  // Labels
-  document.getElementById('labelP1').className = 'player-label' + (current===1?' active-label':'');
-  document.getElementById('labelP2').className = 'player-label' + (current===2?' active-label':'');
+function render(selected=-1,landing=-1,trail=[]){
+  document.getElementById('storeCountP1').textContent=pits[P1_STORE];
+  document.getElementById('storeCountP2').textContent=pits[P2_STORE];
+  document.getElementById('storeP1').className='store'+(current===1&&!gameOver?' mine':'');
+  document.getElementById('storeP2').className='store'+(current===2&&!gameOver?' mine':'');
+  const rowP1=document.getElementById('rowP1');rowP1.innerHTML='';for(const i of P1_PITS)rowP1.appendChild(makePit(i,1,selected,landing,trail));
+  const rowP2=document.getElementById('rowP2');rowP2.innerHTML='';for(const i of[...P2_PITS].reverse())rowP2.appendChild(makePit(i,2,selected,landing,trail));
+  document.getElementById('labelP1').className='player-label'+(current===1?' active-label':'');
+  document.getElementById('labelP2').className='player-label'+(current===2?' active-label':'');
 }
 
-function makePit(idx, player, selected, landing, trail) {
-  const count = pits[idx];
-  const el = document.createElement('div');
-
-  const isCurrentPlayer = player === current;
-  const isSelectable = !animating && !gameOver && isCurrentPlayer && count > 0 &&
-    (gameMode === '2p' || player === 1);
-  const isSelected  = idx === selected;
-  const isLanding   = idx === landing;
-  const isTrail     = trail.includes(idx);
-
-  let cls = 'pit';
-  if (count === 0)   cls += ' empty';
-  if (isSelected)    cls += ' selected';
-  else if (isSelectable) cls += ' selectable';
-  else if (!isCurrentPlayer || count === 0) cls += ' disabled';
-  if (isLanding)     cls += ' landing';
-  else if (isTrail)  cls += ' highlight';
-
-  el.className = cls;
-  el.addEventListener('click', () => onPitClick(idx));
-
-  // Count
-  const countEl = document.createElement('div');
-  countEl.className = 'pit-count';
-  countEl.textContent = count;
-  el.appendChild(countEl);
-
-  // Stone dots (up to 12)
-  if (count > 0 && count <= 16) {
-    const stonesEl = document.createElement('div');
-    stonesEl.className = 'pit-stones';
-    const show = Math.min(count, 12);
-    for (let s = 0; s < show; s++) {
-      const stone = document.createElement('div');
-      stone.className = 'stone' + (player===2?' enemy':'');
-      stonesEl.appendChild(stone);
-    }
-    el.appendChild(stonesEl);
-  }
-
+function makePit(idx,player,selected,landing,trail){
+  const count=pits[idx];const el=document.createElement('div');
+  const isCurrent=player===current;
+  const canSelect=!animating&&!gameOver&&isCurrent&&count>0&&(gameMode==='2p'||(gameMode==='cpu'&&player===1)||(gameMode==='online'&&player===onlineMyPlayer));
+  let cls='pit';if(count===0)cls+=' empty';
+  if(canSelect)cls+=' selectable';else if(!isCurrent||count===0)cls+=' disabled';
+  if(idx===landing)cls+=' landing';else if(trail.includes(idx))cls+=' highlight';
+  el.className=cls;el.addEventListener('click',()=>onPitClick(idx));
+  const ce=document.createElement('div');ce.className='pit-count';ce.textContent=count;el.appendChild(ce);
+  if(count>0&&count<=16){const se=document.createElement('div');se.className='pit-stones';const show=Math.min(count,12);for(let s=0;s<show;s++){const st=document.createElement('div');st.className='stone'+(player===2?' enemy':'');se.appendChild(st);}el.appendChild(se);}
   return el;
 }
 
-// ═══════════════════════════════════════════════════════
-// GAME OVER
-// ═══════════════════════════════════════════════════════
-function endGame() {
-  gameOver = true;
-  const s1 = pits[P1_STORE], s2 = pits[P2_STORE];
-
-  let emoji, title;
-  if (gameMode === 'cpu') {
-    if (s1 > s2)      { emoji='🏆'; title='あなたの勝ち！'; }
-    else if (s2 > s1) { emoji='😞'; title='CPUの勝ち'; }
-    else              { emoji='🤝'; title='引き分け！'; }
-  } else {
-    if (s1 > s2)      { emoji='🏆'; title='プレイヤー1の勝ち！'; }
-    else if (s2 > s1) { emoji='🏆'; title='プレイヤー2の勝ち！'; }
-    else              { emoji='🤝'; title='引き分け！'; }
-  }
-
-  document.getElementById('resEmoji').textContent = emoji;
-  document.getElementById('resTitle').textContent = title;
-  document.getElementById('resS1').textContent = s1;
-  document.getElementById('resS2').textContent = s2;
-  setTimeout(() => document.getElementById('resultOverlay').classList.add('show'), 400);
+function endGame(){
+  gameOver=true;const s1=pits[P1_STORE],s2=pits[P2_STORE];let emoji,title;
+  if(gameMode==='online'){const myS=onlineMyPlayer===1?s1:s2;const opS=onlineMyPlayer===1?s2:s1;if(myS>opS){emoji='🏆';title='あなたの勝ち！';}else if(opS>myS){emoji='😞';title='相手の勝ち';}else{emoji='🤝';title='引き分け！';}}
+  else if(gameMode==='cpu'){if(s1>s2){emoji='🏆';title='あなたの勝ち！';}else if(s2>s1){emoji='😞';title='CPUの勝ち';}else{emoji='🤝';title='引き分け！';}}
+  else{if(s1>s2){emoji='🏆';title='プレイヤー1の勝ち！';}else if(s2>s1){emoji='🏆';title='プレイヤー2の勝ち！';}else{emoji='🤝';title='引き分け！';}}
+  document.getElementById('resEmoji').textContent=emoji;document.getElementById('resTitle').textContent=title;
+  document.getElementById('resS1').textContent=s1;document.getElementById('resS2').textContent=s2;
+  setTimeout(()=>document.getElementById('resultOverlay').classList.add('show'),400);
 }
 
-// ═══════════════════════════════════════════════════════
-// THEME
-// ═══════════════════════════════════════════════════════
-function toggleTheme() {
-  const d = document.documentElement.classList.toggle('dark');
-  document.getElementById('themeBtn').textContent = d ? '🌙' : '🌤';
-  localStorage.setItem('pb-theme', d ? 'dark' : 'light');
+// ── ONLINE ──────────────────────────────────────────────
+function genCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({length:4},()=>c[Math.floor(Math.random()*c.length)]).join('');}
+function openMatchModal(){if(!fbReady){alert('Firebase接続中です。少し待ってください。');return;}document.getElementById('matchModal').classList.add('show');switchMatchTab('create');createRoom();}
+function closeMatchModal(){document.getElementById('matchModal').classList.remove('show');if(!onlineRoomId)setMode('cpu');}
+function switchMatchTab(t){document.querySelectorAll('.match-tab').forEach((b,i)=>b.classList.toggle('active',['create','join','random'][i]===t));document.querySelectorAll('.match-panel').forEach(p=>p.classList.remove('show'));document.getElementById(`panel${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.add('show');}
+
+async function createRoom(){
+  const code=genCode();document.getElementById('createdCode').textContent=code;
+  const url=`${location.origin}${location.pathname}?room=${code}`;document.getElementById('shareUrl').textContent=url;
+  document.getElementById('createStatus').textContent='相手の入室を待っています…';
+  const{db,ref,set,onValue}=window._fb;const roomRef=ref(db,`mancala_rooms/${code}`);
+  await set(roomRef,{status:'waiting',pits:[...pits],current:1,gameOver:false,createdAt:Date.now()});
+  onlineRoomId=code;onlineMyPlayer=1;
+  onValue(roomRef,snap=>{const d=snap.val();if(!d)return;if(d.status==='playing'&&d.guest){document.getElementById('createStatus').textContent='✓ 相手が入室しました！';setTimeout(()=>{closeMatchModal();activateOnlineMode();},800);}});
 }
 
-// ═══════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════
-(function() {
-  const saved = localStorage.getItem('pb-theme');
-  const dark  = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  document.documentElement.classList.toggle('dark', dark);
-  document.getElementById('themeBtn').textContent = dark ? '🌙' : '🌤';
-  newGame();
-})();
+async function joinByCode(){
+  const code=document.getElementById('joinCodeInput').value.trim().toUpperCase();
+  if(code.length!==4){document.getElementById('joinStatus').textContent='4文字のコードを入力してください';document.getElementById('joinStatus').className='match-status err';return;}
+  const{db,ref,get,update}=window._fb;const roomRef=ref(db,`mancala_rooms/${code}`);
+  const snap=await get(roomRef);
+  if(!snap.exists()){document.getElementById('joinStatus').textContent='ルームが見つかりません';document.getElementById('joinStatus').className='match-status err';return;}
+  const data=snap.val();
+  if(data.status!=='waiting'){document.getElementById('joinStatus').textContent='このルームは既に満員です';document.getElementById('joinStatus').className='match-status err';return;}
+  await update(roomRef,{status:'playing',guest:'p2'});
+  onlineRoomId=code;onlineMyPlayer=2;
+  document.getElementById('joinStatus').textContent='✓ 入室しました！';document.getElementById('joinStatus').className='match-status ok';
+  setTimeout(()=>{closeMatchModal();activateOnlineMode();},600);
+}
+
+async function startRandom(){
+  const{db,ref,get}=window._fb;document.getElementById('randomStatus').textContent='空きルームを検索中…';
+  const snap=await get(ref(db,'mancala_rooms'));let found=null;
+  if(snap.exists())snap.forEach(child=>{if(!found&&child.val().status==='waiting'&&Date.now()-child.val().createdAt<120000)found=child.key;});
+  if(found){document.getElementById('joinCodeInput').value=found;switchMatchTab('join');joinByCode();}
+  else{document.getElementById('randomStatus').textContent='空きルームなし。新しく作成します…';switchMatchTab('create');createRoom();}
+}
+
+function activateOnlineMode(){
+  gameMode='online';
+  document.querySelectorAll('#modeSeg .pb-seg-btn').forEach((b,i)=>b.classList.toggle('active',i===2));
+  document.getElementById('cpuRow').style.display='none';
+  document.getElementById('onlineStatusBar').classList.add('show');
+  document.getElementById('onlineStatusText').textContent=`ルーム: ${onlineRoomId} ｜ あなた: ${onlineMyPlayer===1?'P1（下）':'P2（上）'}`;
+  const url=new URL(location.href);url.searchParams.set('room',onlineRoomId);history.replaceState({},'',url);
+  updateLabels();
+  const{db,ref,onValue}=window._fb;const roomRef=ref(db,`mancala_rooms/${onlineRoomId}`);
+  onlineListener=onValue(roomRef,snap=>{
+    const d=snap.val();if(!d){leaveRoom();return;}
+    if(d.pits&&!animating){
+      pits=[...d.pits];current=d.current;gameOver=d.gameOver||false;
+      render();updateTurnBanner(false);
+      if(d.gameOver&&!document.getElementById('resultOverlay').classList.contains('show'))setTimeout(endGame,400);
+    }
+  });
+  if(onlineMyPlayer===1)pushOnlineState();
+}
+
+function pushOnlineState(){
+  if(!onlineRoomId||!window._fb)return;
+  const{db,ref,update}=window._fb;
+  update(ref(db,`mancala_rooms/${onlineRoomId}`),{pits:[...pits],current,gameOver});
+}
+
+function leaveRoom(){
+  if(onlineRoomId&&window._fb){const{db,ref,remove}=window._fb;remove(ref(db,`mancala_rooms/${onlineRoomId}`));}
+  onlineRoomId=null;onlineMyPlayer=null;onlineListener=null;
+  const url=new URL(location.href);url.searchParams.delete('room');history.replaceState({},'',url);
+  setMode('cpu');
+}
+
+function copyUrl(){const url=document.getElementById('shareUrl').textContent;navigator.clipboard.writeText(url).then(()=>{document.getElementById('shareUrl').textContent='✓ コピーしました！';setTimeout(()=>document.getElementById('shareUrl').textContent=url,2000);});}
+
+function toggleTheme(){const d=document.documentElement.classList.toggle('dark');document.getElementById('themeBtn').textContent=d?'🌙':'🌤';localStorage.setItem('pb-theme',d?'dark':'light');}
+
+(function(){const saved=localStorage.getItem('pb-theme');const dark=saved==='dark'||(!saved&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',dark);document.getElementById('themeBtn').textContent=dark?'🌙':'🌤';newGame();})();
 </script>
 </body>
 </html>
