@@ -368,7 +368,10 @@ function newGame() {
   document.getElementById('resultOverlay').classList.remove('show');
   updateNames(); renderBoard(); updateScoreBar(); updateTurnText();
   if (gameMode==='cpu' && playerColor===WHITE) setTimeout(doCPUMove,500);
-  if (gameMode==='online' && onlineRoomId) pushOnlineState();
+  if (gameMode==='online' && onlineRoomId) {
+    // Reset game state on Firebase so both players see fresh board
+    pushOnlineState();
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -590,11 +593,13 @@ async function createRoom() {
   onlineRoomId  = code;
   onlineMyColor = BLACK;
 
-  // Watch for opponent joining
-  onValue(roomRef, snap => {
+  // Watch for opponent joining — store unsubscribe to avoid duplicates
+  if (window._createRoomUnsub) window._createRoomUnsub();
+  window._createRoomUnsub = onValue(roomRef, snap => {
     const data = snap.val();
     if (!data) return;
     if (data.status === 'playing' && data.guest) {
+      if (window._createRoomUnsub) { window._createRoomUnsub(); window._createRoomUnsub = null; }
       document.getElementById('createStatus').textContent = '✓ 相手が入室しました！';
       setTimeout(() => {
         closeMatchModal();
@@ -636,6 +641,16 @@ async function startRandom() {
     });
   }
   if (found) {
+    // Double-check it's still waiting (race condition guard)
+    const checkRef = window._fb.ref(window._fb.db, `othello_rooms/${found}`);
+    const checkSnap = await window._fb.get(checkRef);
+    if (!checkSnap.exists() || checkSnap.val().status !== 'waiting') {
+      // Room was taken, create new one
+      document.getElementById('randomStatus').textContent = '空きルームが埋まりました。新しく作成します…';
+      switchMatchTab('create');
+      createRoom();
+      return;
+    }
     document.getElementById('joinCodeInput').value = found;
     switchMatchTab('join');
     joinByCode();
@@ -664,16 +679,22 @@ function activateOnlineMode() {
   // Listen to room
   const {db,ref,onValue} = window._fb;
   const roomRef = ref(db, `othello_rooms/${onlineRoomId}`);
-  if (onlineListener) { window._fb.off(roomRef, onlineListener); }
+  if (onlineListener) { onlineListener(); onlineListener = null; }
   onlineListener = onValue(roomRef, snap => {
     const data = snap.val();
-    if (!data) { leaveRoom(); return; }
+    if (!data) {
+      // Room was deleted — opponent left
+      if (gameMode === 'online' && !gameOver) {
+        alert('相手が退出しました');
+      }
+      leaveRoom(); return;
+    }
     if (data.board) {
       board   = data.board.map(r=>[...r]);
       current = data.current;
       gameOver = data.gameOver || false;
       renderBoard(); updateScoreBar(); updateTurnText();
-      if (gameOver) {
+      if (gameOver && !document.getElementById('resultOverlay').classList.contains('show')) {
         const{black,white}=countDiscs(board);
         const myDiscs=onlineMyColor===BLACK?black:white;
         const opDiscs=onlineMyColor===BLACK?white:black;
@@ -705,17 +726,27 @@ function pushOnlineState() {
 }
 
 function leaveRoom() {
+  if (onlineListener) { onlineListener(); onlineListener = null; }
+  if (window._createRoomUnsub) { window._createRoomUnsub(); window._createRoomUnsub = null; }
   if (onlineRoomId && window._fb) {
     const {db,ref,remove} = window._fb;
     remove(ref(db, `othello_rooms/${onlineRoomId}`));
   }
   onlineRoomId  = null;
   onlineMyColor = null;
-  onlineListener = null;
+  // Clear gameMode BEFORE setMode to avoid recursive leaveRoom call
+  const prevMode = gameMode;
+  gameMode = 'cpu';
   const url = new URL(location.href);
   url.searchParams.delete('room');
   history.replaceState({}, '', url);
-  setMode('cpu');
+  if (prevMode === 'online') {
+    document.getElementById('onlineStatusBar').classList.remove('show');
+    document.querySelectorAll('#modeSeg .pb-seg-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+    document.getElementById('cpuRow').style.display = '';
+    if (document.getElementById('colorRow')) document.getElementById('colorRow').style.display = '';
+    newGame();
+  }
 }
 
 function copyUrl() {

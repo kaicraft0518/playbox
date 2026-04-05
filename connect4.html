@@ -277,7 +277,10 @@ function newGame(){
   document.getElementById('thinkingBar').classList.remove('show');
   document.getElementById('resultOverlay').classList.remove('show');
   updateNames();renderBoard();updateTurnText();updateScoreCards();
-  if(gameMode==='online'&&onlineRoomId)pushOnlineState();
+  if(gameMode==='online'&&onlineRoomId){
+    // Both players reset their local state; host pushes fresh board to Firebase
+    if(onlineMyPlayer===1)pushOnlineState();
+  }
 }
 
 function getRow(b,col){for(let r=ROWS-1;r>=0;r--)if(b[r][col]===EMPTY)return r;return -1;}
@@ -385,7 +388,8 @@ async function createRoom(){
   const{db,ref,set,onValue}=window._fb;const roomRef=ref(db,`connect4_rooms/${code}`);
   await set(roomRef,{status:'waiting',board:board.map(r=>[...r]),current:P1,gameOver:false,createdAt:Date.now()});
   onlineRoomId=code;onlineMyPlayer=P1;
-  onValue(roomRef,snap=>{const d=snap.val();if(!d)return;if(d.status==='playing'&&d.guest){document.getElementById('createStatus').textContent='✓ 相手が入室しました！';setTimeout(()=>{closeMatchModal();activateOnlineMode();},800);}});
+  if(window._createRoomUnsub)window._createRoomUnsub();
+  window._createRoomUnsub=onValue(roomRef,snap=>{const d=snap.val();if(!d)return;if(d.status==='playing'&&d.guest){if(window._createRoomUnsub){window._createRoomUnsub();window._createRoomUnsub=null;}document.getElementById('createStatus').textContent='✓ 相手が入室しました！';setTimeout(()=>{closeMatchModal();activateOnlineMode();},800);}});
 }
 
 async function joinByCode(){
@@ -406,7 +410,11 @@ async function startRandom(){
   const{db,ref,get}=window._fb;document.getElementById('randomStatus').textContent='空きルームを検索中…';
   const snap=await get(ref(db,'connect4_rooms'));let found=null;
   if(snap.exists())snap.forEach(child=>{if(!found&&child.val().status==='waiting'&&Date.now()-child.val().createdAt<120000)found=child.key;});
-  if(found){document.getElementById('joinCodeInput').value=found;switchMatchTab('join');joinByCode();}
+  if(found){
+    const ck=window._fb.ref(window._fb.db,`connect4_rooms/${found}`);
+    const cs=await window._fb.get(ck);
+    if(!cs.exists()||cs.val().status!=='waiting'){document.getElementById('randomStatus').textContent='空きルームが埋まりました。新しく作成します…';switchMatchTab('create');createRoom();return;}
+    document.getElementById('joinCodeInput').value=found;switchMatchTab('join');joinByCode();}
   else{document.getElementById('randomStatus').textContent='空きルームなし。新しく作成します…';switchMatchTab('create');createRoom();}
 }
 
@@ -419,8 +427,9 @@ function activateOnlineMode(){
   const url=new URL(location.href);url.searchParams.set('room',onlineRoomId);history.replaceState({},'',url);
   updateNames();
   const{db,ref,onValue}=window._fb;const roomRef=ref(db,`connect4_rooms/${onlineRoomId}`);
+  if(onlineListener){onlineListener();onlineListener=null;}
   onlineListener=onValue(roomRef,snap=>{
-    const d=snap.val();if(!d){leaveRoom();return;}
+    const d=snap.val();if(!d){if(gameMode==='online'&&!gameOver)alert('相手が退出しました');leaveRoom();return;}
     if(d.board){board=d.board.map(r=>[...r]);current=d.current;gameOver=d.gameOver||false;winCells=d.winCells||[];renderBoard();updateTurnText();updateScoreCards();
       if(d.gameOver&&d.winner!==undefined&&!document.getElementById('resultOverlay').classList.contains('show')){
         const w=d.winner;let emoji,title,sub='';
@@ -444,10 +453,18 @@ function pushOnlineState(){
 }
 
 function leaveRoom(){
+  if(onlineListener){onlineListener();onlineListener=null;}
+  if(window._createRoomUnsub){window._createRoomUnsub();window._createRoomUnsub=null;}
   if(onlineRoomId&&window._fb){const{db,ref,remove}=window._fb;remove(ref(db,`connect4_rooms/${onlineRoomId}`));}
-  onlineRoomId=null;onlineMyPlayer=null;onlineListener=null;
+  onlineRoomId=null;onlineMyPlayer=null;
+  const prevMode=gameMode;gameMode='cpu';
   const url=new URL(location.href);url.searchParams.delete('room');history.replaceState({},'',url);
-  setMode('cpu');
+  if(prevMode==='online'){
+    document.getElementById('onlineStatusBar').classList.remove('show');
+    document.querySelectorAll('#modeSeg .pb-seg-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+    document.getElementById('cpuRow').style.display='';
+    newGame();
+  }
 }
 
 function copyUrl(){const url=document.getElementById('shareUrl').textContent;navigator.clipboard.writeText(url).then(()=>{document.getElementById('shareUrl').textContent='✓ コピーしました！';setTimeout(()=>document.getElementById('shareUrl').textContent=url,2000);});}

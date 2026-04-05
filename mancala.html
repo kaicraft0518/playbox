@@ -452,7 +452,8 @@ async function createRoom(){
   const{db,ref,set,onValue}=window._fb;const roomRef=ref(db,`mancala_rooms/${code}`);
   await set(roomRef,{status:'waiting',pits:[...pits],current:1,gameOver:false,createdAt:Date.now()});
   onlineRoomId=code;onlineMyPlayer=1;
-  onValue(roomRef,snap=>{const d=snap.val();if(!d)return;if(d.status==='playing'&&d.guest){document.getElementById('createStatus').textContent='✓ 相手が入室しました！';setTimeout(()=>{closeMatchModal();activateOnlineMode();},800);}});
+  if(window._createRoomUnsub)window._createRoomUnsub();
+  window._createRoomUnsub=onValue(roomRef,snap=>{const d=snap.val();if(!d)return;if(d.status==='playing'&&d.guest){if(window._createRoomUnsub){window._createRoomUnsub();window._createRoomUnsub=null;}document.getElementById('createStatus').textContent='✓ 相手が入室しました！';setTimeout(()=>{closeMatchModal();activateOnlineMode();},800);}});
 }
 
 async function joinByCode(){
@@ -473,7 +474,11 @@ async function startRandom(){
   const{db,ref,get}=window._fb;document.getElementById('randomStatus').textContent='空きルームを検索中…';
   const snap=await get(ref(db,'mancala_rooms'));let found=null;
   if(snap.exists())snap.forEach(child=>{if(!found&&child.val().status==='waiting'&&Date.now()-child.val().createdAt<120000)found=child.key;});
-  if(found){document.getElementById('joinCodeInput').value=found;switchMatchTab('join');joinByCode();}
+  if(found){
+    const ck=window._fb.ref(window._fb.db,`mancala_rooms/${found}`);
+    const cs=await window._fb.get(ck);
+    if(!cs.exists()||cs.val().status!=='waiting'){document.getElementById('randomStatus').textContent='空きルームが埋まりました。新しく作成します…';switchMatchTab('create');createRoom();return;}
+    document.getElementById('joinCodeInput').value=found;switchMatchTab('join');joinByCode();}
   else{document.getElementById('randomStatus').textContent='空きルームなし。新しく作成します…';switchMatchTab('create');createRoom();}
 }
 
@@ -486,8 +491,9 @@ function activateOnlineMode(){
   const url=new URL(location.href);url.searchParams.set('room',onlineRoomId);history.replaceState({},'',url);
   updateLabels();
   const{db,ref,onValue}=window._fb;const roomRef=ref(db,`mancala_rooms/${onlineRoomId}`);
+  if(onlineListener){onlineListener();onlineListener=null;}
   onlineListener=onValue(roomRef,snap=>{
-    const d=snap.val();if(!d){leaveRoom();return;}
+    const d=snap.val();if(!d){if(gameMode==='online'&&!gameOver)alert('相手が退出しました');leaveRoom();return;}
     if(d.pits&&!animating){
       pits=[...d.pits];current=d.current;gameOver=d.gameOver||false;
       render();updateTurnBanner(false);
@@ -504,10 +510,18 @@ function pushOnlineState(){
 }
 
 function leaveRoom(){
+  if(onlineListener){onlineListener();onlineListener=null;}
+  if(window._createRoomUnsub){window._createRoomUnsub();window._createRoomUnsub=null;}
   if(onlineRoomId&&window._fb){const{db,ref,remove}=window._fb;remove(ref(db,`mancala_rooms/${onlineRoomId}`));}
-  onlineRoomId=null;onlineMyPlayer=null;onlineListener=null;
+  onlineRoomId=null;onlineMyPlayer=null;
+  const prevMode=gameMode;gameMode='cpu';
   const url=new URL(location.href);url.searchParams.delete('room');history.replaceState({},'',url);
-  setMode('cpu');
+  if(prevMode==='online'){
+    document.getElementById('onlineStatusBar').classList.remove('show');
+    document.querySelectorAll('#modeSeg .pb-seg-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+    document.getElementById('cpuRow').style.display='';
+    newGame();
+  }
 }
 
 function copyUrl(){const url=document.getElementById('shareUrl').textContent;navigator.clipboard.writeText(url).then(()=>{document.getElementById('shareUrl').textContent='✓ コピーしました！';setTimeout(()=>document.getElementById('shareUrl').textContent=url,2000);});}
