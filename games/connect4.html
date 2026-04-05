@@ -110,6 +110,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .online-status-text{font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--accent);letter-spacing:0.08em;}
 .online-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:blink 1.5s ease infinite;}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* ── DISCONNECT OVERLAY ── */
+.disconnect-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:300;align-items:center;justify-content:center;padding:16px;}
+.disconnect-overlay.show{display:flex;}
+.disconnect-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 24px;width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;box-shadow:var(--shadow-lg);}
+.disconnect-emoji{font-size:2.6rem;}
+.disconnect-title{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;color:var(--text);}
+.disconnect-sub{font-size:0.78rem;color:var(--text2);line-height:1.6;}
 </style>
 </head>
 <body>
@@ -277,7 +285,10 @@ function newGame(){
   document.getElementById('thinkingBar').classList.remove('show');
   document.getElementById('resultOverlay').classList.remove('show');
   updateNames();renderBoard();updateTurnText();updateScoreCards();
-  if(gameMode==='online'&&onlineRoomId)pushOnlineState();
+  if(gameMode==='online'&&onlineRoomId){
+    // Both players reset their local state; host pushes fresh board to Firebase
+    if(onlineMyPlayer===1)pushOnlineState();
+  }
 }
 
 function getRow(b,col){for(let r=ROWS-1;r>=0;r--)if(b[r][col]===EMPTY)return r;return -1;}
@@ -385,7 +396,8 @@ async function createRoom(){
   const{db,ref,set,onValue}=window._fb;const roomRef=ref(db,`connect4_rooms/${code}`);
   await set(roomRef,{status:'waiting',board:board.map(r=>[...r]),current:P1,gameOver:false,createdAt:Date.now()});
   onlineRoomId=code;onlineMyPlayer=P1;
-  onValue(roomRef,snap=>{const d=snap.val();if(!d)return;if(d.status==='playing'&&d.guest){document.getElementById('createStatus').textContent='✓ 相手が入室しました！';setTimeout(()=>{closeMatchModal();activateOnlineMode();},800);}});
+  if(window._createRoomUnsub)window._createRoomUnsub();
+  window._createRoomUnsub=onValue(roomRef,snap=>{const d=snap.val();if(!d)return;if(d.status==='playing'&&d.guest){if(window._createRoomUnsub){window._createRoomUnsub();window._createRoomUnsub=null;}document.getElementById('createStatus').textContent='✓ 相手が入室しました！';setTimeout(()=>{closeMatchModal();activateOnlineMode();},800);}});
 }
 
 async function joinByCode(){
@@ -406,7 +418,11 @@ async function startRandom(){
   const{db,ref,get}=window._fb;document.getElementById('randomStatus').textContent='空きルームを検索中…';
   const snap=await get(ref(db,'connect4_rooms'));let found=null;
   if(snap.exists())snap.forEach(child=>{if(!found&&child.val().status==='waiting'&&Date.now()-child.val().createdAt<120000)found=child.key;});
-  if(found){document.getElementById('joinCodeInput').value=found;switchMatchTab('join');joinByCode();}
+  if(found){
+    const ck=window._fb.ref(window._fb.db,`connect4_rooms/${found}`);
+    const cs=await window._fb.get(ck);
+    if(!cs.exists()||cs.val().status!=='waiting'){document.getElementById('randomStatus').textContent='空きルームが埋まりました。新しく作成します…';switchMatchTab('create');createRoom();return;}
+    document.getElementById('joinCodeInput').value=found;switchMatchTab('join');joinByCode();}
   else{document.getElementById('randomStatus').textContent='空きルームなし。新しく作成します…';switchMatchTab('create');createRoom();}
 }
 
@@ -419,8 +435,9 @@ function activateOnlineMode(){
   const url=new URL(location.href);url.searchParams.set('room',onlineRoomId);history.replaceState({},'',url);
   updateNames();
   const{db,ref,onValue}=window._fb;const roomRef=ref(db,`connect4_rooms/${onlineRoomId}`);
+  if(onlineListener){onlineListener();onlineListener=null;}
   onlineListener=onValue(roomRef,snap=>{
-    const d=snap.val();if(!d){leaveRoom();return;}
+    const d=snap.val();if(!d||d.disconnected){if(gameMode==='online'&&!gameOver){showDisconnect();}else{leaveRoom();}return;}
     if(d.board){board=d.board.map(r=>[...r]);current=d.current;gameOver=d.gameOver||false;winCells=d.winCells||[];renderBoard();updateTurnText();updateScoreCards();
       if(d.gameOver&&d.winner!==undefined&&!document.getElementById('resultOverlay').classList.contains('show')){
         const w=d.winner;let emoji,title,sub='';
@@ -444,17 +461,44 @@ function pushOnlineState(){
 }
 
 function leaveRoom(){
-  if(onlineRoomId&&window._fb){const{db,ref,remove}=window._fb;remove(ref(db,`connect4_rooms/${onlineRoomId}`));}
-  onlineRoomId=null;onlineMyPlayer=null;onlineListener=null;
+  if(onlineListener){onlineListener();onlineListener=null;}
+  if(window._createRoomUnsub){window._createRoomUnsub();window._createRoomUnsub=null;}
+  if(onlineRoomId&&window._fb){const{db,ref,remove,update}=window._fb;update(ref(db,`connect4_rooms/${onlineRoomId}`),{disconnected:true}).then(()=>remove(ref(db,`connect4_rooms/${onlineRoomId}`))).catch(()=>{});}
+  onlineRoomId=null;onlineMyPlayer=null;
+  const prevMode=gameMode;gameMode='cpu';
   const url=new URL(location.href);url.searchParams.delete('room');history.replaceState({},'',url);
-  setMode('cpu');
+  if(prevMode==='online'){
+    document.getElementById('onlineStatusBar').classList.remove('show');
+    document.querySelectorAll('#modeSeg .pb-seg-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+    document.getElementById('cpuRow').style.display='';
+    newGame();
+  }
 }
 
 function copyUrl(){const url=document.getElementById('shareUrl').textContent;navigator.clipboard.writeText(url).then(()=>{document.getElementById('shareUrl').textContent='✓ コピーしました！';setTimeout(()=>document.getElementById('shareUrl').textContent=url,2000);});}
+
+
+function showDisconnect() {
+  document.getElementById('disconnectOverlay').classList.add('show');
+}
+function closeDisconnect() {
+  document.getElementById('disconnectOverlay').classList.remove('show');
+  leaveRoom();
+}
 
 function toggleTheme(){const d=document.documentElement.classList.toggle('dark');document.getElementById('themeBtn').textContent=d?'🌙':'🌤';localStorage.setItem('pb-theme',d?'dark':'light');}
 
 (function(){const saved=localStorage.getItem('pb-theme');const dark=saved==='dark'||(!saved&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',dark);document.getElementById('themeBtn').textContent=dark?'🌙':'🌤';newGame();})();
 </script>
+
+<!-- Disconnect overlay -->
+<div class="disconnect-overlay" id="disconnectOverlay">
+  <div class="disconnect-box">
+    <div class="disconnect-emoji">🔌</div>
+    <div class="disconnect-title">接続が切れました</div>
+    <div class="disconnect-sub">相手がゲームから退出しました。<br>試合を終了してモード選択に戻ります。</div>
+    <button class="pb-btn primary" onclick="closeDisconnect()">OK</button>
+  </div>
+</div>
 </body>
 </html>

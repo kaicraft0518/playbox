@@ -118,6 +118,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .online-status-text{font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--accent);letter-spacing:0.08em;}
 .online-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:blink 1.5s ease infinite;}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* ── DISCONNECT OVERLAY ── */
+.disconnect-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:300;align-items:center;justify-content:center;padding:16px;}
+.disconnect-overlay.show{display:flex;}
+.disconnect-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 24px;width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;box-shadow:var(--shadow-lg);}
+.disconnect-emoji{font-size:2.6rem;}
+.disconnect-title{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;color:var(--text);}
+.disconnect-sub{font-size:0.78rem;color:var(--text2);line-height:1.6;}
 </style>
 </head>
 <body>
@@ -368,7 +376,10 @@ function newGame() {
   document.getElementById('resultOverlay').classList.remove('show');
   updateNames(); renderBoard(); updateScoreBar(); updateTurnText();
   if (gameMode==='cpu' && playerColor===WHITE) setTimeout(doCPUMove,500);
-  if (gameMode==='online' && onlineRoomId) pushOnlineState();
+  if (gameMode==='online' && onlineRoomId) {
+    // Reset game state on Firebase so both players see fresh board
+    pushOnlineState();
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -590,11 +601,13 @@ async function createRoom() {
   onlineRoomId  = code;
   onlineMyColor = BLACK;
 
-  // Watch for opponent joining
-  onValue(roomRef, snap => {
+  // Watch for opponent joining — store unsubscribe to avoid duplicates
+  if (window._createRoomUnsub) window._createRoomUnsub();
+  window._createRoomUnsub = onValue(roomRef, snap => {
     const data = snap.val();
     if (!data) return;
     if (data.status === 'playing' && data.guest) {
+      if (window._createRoomUnsub) { window._createRoomUnsub(); window._createRoomUnsub = null; }
       document.getElementById('createStatus').textContent = '✓ 相手が入室しました！';
       setTimeout(() => {
         closeMatchModal();
@@ -636,6 +649,16 @@ async function startRandom() {
     });
   }
   if (found) {
+    // Double-check it's still waiting (race condition guard)
+    const checkRef = window._fb.ref(window._fb.db, `othello_rooms/${found}`);
+    const checkSnap = await window._fb.get(checkRef);
+    if (!checkSnap.exists() || checkSnap.val().status !== 'waiting') {
+      // Room was taken, create new one
+      document.getElementById('randomStatus').textContent = '空きルームが埋まりました。新しく作成します…';
+      switchMatchTab('create');
+      createRoom();
+      return;
+    }
     document.getElementById('joinCodeInput').value = found;
     switchMatchTab('join');
     joinByCode();
@@ -664,16 +687,24 @@ function activateOnlineMode() {
   // Listen to room
   const {db,ref,onValue} = window._fb;
   const roomRef = ref(db, `othello_rooms/${onlineRoomId}`);
-  if (onlineListener) { window._fb.off(roomRef, onlineListener); }
+  if (onlineListener) { onlineListener(); onlineListener = null; }
   onlineListener = onValue(roomRef, snap => {
     const data = snap.val();
-    if (!data) { leaveRoom(); return; }
+    if (!data || data.disconnected) {
+      // Room was deleted or disconnect flag set — opponent left
+      if (gameMode === 'online' && !gameOver) {
+        showDisconnect();
+      } else {
+        leaveRoom();
+      }
+      return;
+    }
     if (data.board) {
       board   = data.board.map(r=>[...r]);
       current = data.current;
       gameOver = data.gameOver || false;
       renderBoard(); updateScoreBar(); updateTurnText();
-      if (gameOver) {
+      if (gameOver && !document.getElementById('resultOverlay').classList.contains('show')) {
         const{black,white}=countDiscs(board);
         const myDiscs=onlineMyColor===BLACK?black:white;
         const opDiscs=onlineMyColor===BLACK?white:black;
@@ -705,17 +736,30 @@ function pushOnlineState() {
 }
 
 function leaveRoom() {
+  if (onlineListener) { onlineListener(); onlineListener = null; }
+  if (window._createRoomUnsub) { window._createRoomUnsub(); window._createRoomUnsub = null; }
   if (onlineRoomId && window._fb) {
-    const {db,ref,remove} = window._fb;
-    remove(ref(db, `othello_rooms/${onlineRoomId}`));
+    const {db,ref,remove,update} = window._fb;
+    // Write disconnect flag first so the other player is notified, then delete
+    update(ref(db, `othello_rooms/${onlineRoomId}`), { disconnected: true })
+      .then(() => remove(ref(db, `othello_rooms/${onlineRoomId}`)))
+      .catch(() => {});
   }
   onlineRoomId  = null;
   onlineMyColor = null;
-  onlineListener = null;
+  // Clear gameMode BEFORE setMode to avoid recursive leaveRoom call
+  const prevMode = gameMode;
+  gameMode = 'cpu';
   const url = new URL(location.href);
   url.searchParams.delete('room');
   history.replaceState({}, '', url);
-  setMode('cpu');
+  if (prevMode === 'online') {
+    document.getElementById('onlineStatusBar').classList.remove('show');
+    document.querySelectorAll('#modeSeg .pb-seg-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+    document.getElementById('cpuRow').style.display = '';
+    if (document.getElementById('colorRow')) document.getElementById('colorRow').style.display = '';
+    newGame();
+  }
 }
 
 function copyUrl() {
@@ -729,6 +773,15 @@ function copyUrl() {
 // ═══════════════════════════════════════════════════════
 // THEME
 // ═══════════════════════════════════════════════════════
+
+function showDisconnect() {
+  document.getElementById('disconnectOverlay').classList.add('show');
+}
+function closeDisconnect() {
+  document.getElementById('disconnectOverlay').classList.remove('show');
+  leaveRoom();
+}
+
 function toggleTheme() {
   const d=document.documentElement.classList.toggle('dark');
   document.getElementById('themeBtn').textContent=d?'🌙':'🌤';
@@ -746,5 +799,15 @@ function toggleTheme() {
   newGame();
 })();
 </script>
+
+<!-- Disconnect overlay -->
+<div class="disconnect-overlay" id="disconnectOverlay">
+  <div class="disconnect-box">
+    <div class="disconnect-emoji">🔌</div>
+    <div class="disconnect-title">接続が切れました</div>
+    <div class="disconnect-sub">相手がゲームから退出しました。<br>試合を終了してモード選択に戻ります。</div>
+    <button class="pb-btn primary" onclick="closeDisconnect()">OK</button>
+  </div>
+</div>
 </body>
 </html>
