@@ -239,8 +239,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="modal-sub">ルームを作成してコードを友達に教えてください。</div>
       <div class="room-code-display" id="createdCode">----</div>
       <div class="url-display" id="shareUrl" onclick="copyUrl()" title="クリックでコピー">URLを生成中…</div>
-      <div class="match-status" id="createStatus">相手の入室を待っています…</div>
-      <button class="pb-btn" onclick="closeMatchModal()">キャンセル</button>
+      <div class="match-status" id="createStatus">「ルームを作る」を押してください</div>
+      <div style="display:flex;gap:8px;">
+        <button class="pb-btn primary" onclick="createRoom()">🏠 ルームを作る</button>
+        <button class="pb-btn" onclick="closeMatchModal()">キャンセル</button>
+      </div>
     </div>
     <div class="match-panel" id="panelJoin">
       <div class="modal-sub">4桁のルームコードを入力してください。</div>
@@ -449,11 +452,20 @@ function endGame(){
 
 // ── ONLINE ──────────────────────────────────────────────
 function genCode(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({length:4},()=>c[Math.floor(Math.random()*c.length)]).join('');}
-function openMatchModal(){if(!fbReady){alert('Firebase接続中です。少し待ってください。');return;}document.getElementById('matchModal').classList.add('show');switchMatchTab('create');createRoom();}
+function openMatchModal(){if(!fbReady){alert('Firebase接続中です。少し待ってください。');return;}document.getElementById('matchModal').classList.add('show');switchMatchTab('create');}
 function closeMatchModal(){document.getElementById('matchModal').classList.remove('show');if(!onlineRoomId)setMode('cpu');}
-function switchMatchTab(t){document.querySelectorAll('.match-tab').forEach((b,i)=>b.classList.toggle('active',['create','join','random'][i]===t));document.querySelectorAll('.match-panel').forEach(p=>p.classList.remove('show'));document.getElementById(`panel${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.add('show');}
+
+function cancelPendingRoom(){
+  if(window._createRoomUnsub){window._createRoomUnsub();window._createRoomUnsub=null;}
+  if(onlineRoomId&&window._fb){const{db,ref,get,remove}=window._fb;get(ref(db,`mancala_rooms/${onlineRoomId}/status`)).then(snap=>{if(snap.val()==='waiting')remove(ref(db,`mancala_rooms/${onlineRoomId}`));}).catch(()=>{});}
+  onlineRoomId=null;onlineMyPlayer=null;
+  document.getElementById('createdCode').textContent='----';
+  document.getElementById('createStatus').textContent='「ルームを作る」を押してください';
+}
+function switchMatchTab(t){if(t!=='create')cancelPendingRoom();document.querySelectorAll('.match-tab').forEach((b,i)=>b.classList.toggle('active',['create','join','random'][i]===t));document.querySelectorAll('.match-panel').forEach(p=>p.classList.remove('show'));document.getElementById(`panel${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.add('show');}
 
 async function createRoom(){
+  cancelPendingRoom();
   const code=genCode();document.getElementById('createdCode').textContent=code;
   const url=`${location.origin}${location.pathname}?room=${code}`;document.getElementById('shareUrl').textContent=url;
   document.getElementById('createStatus').textContent='相手の入室を待っています…';
