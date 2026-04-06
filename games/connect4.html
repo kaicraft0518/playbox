@@ -463,16 +463,17 @@ function pushOnlineState(){
 function leaveRoom(){
   if(onlineListener){onlineListener();onlineListener=null;}
   if(window._createRoomUnsub){window._createRoomUnsub();window._createRoomUnsub=null;}
-  if(onlineRoomId&&window._fb){const{db,ref,remove,update}=window._fb;update(ref(db,`connect4_rooms/${onlineRoomId}`),{disconnected:true}).then(()=>remove(ref(db,`connect4_rooms/${onlineRoomId}`))).catch(()=>{});}
+  const roomIdToDelete=onlineRoomId;
+  if(roomIdToDelete&&window._fb){const{db,ref,remove,update}=window._fb;update(ref(db,`connect4_rooms/${roomIdToDelete}`),{disconnected:true}).then(()=>remove(ref(db,`connect4_rooms/${roomIdToDelete}`))).catch(()=>{});}
   onlineRoomId=null;onlineMyPlayer=null;
-  const prevMode=gameMode;gameMode='cpu';
+  gameMode='cpu';
   const url=new URL(location.href);url.searchParams.delete('room');history.replaceState({},'',url);
-  if(prevMode==='online'){
-    document.getElementById('onlineStatusBar').classList.remove('show');
-    document.querySelectorAll('#modeSeg .pb-seg-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
-    document.getElementById('cpuRow').style.display='';
-    newGame();
-  }
+  document.getElementById('onlineStatusBar').classList.remove('show');
+  document.querySelectorAll('#modeSeg .pb-seg-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  document.getElementById('cpuRow').style.display='';
+  document.getElementById('resultOverlay').classList.remove('show');
+  document.getElementById('disconnectOverlay').classList.remove('show');
+  newGame();
 }
 
 function copyUrl(){const url=document.getElementById('shareUrl').textContent;navigator.clipboard.writeText(url).then(()=>{document.getElementById('shareUrl').textContent='✓ コピーしました！';setTimeout(()=>document.getElementById('shareUrl').textContent=url,2000);});}

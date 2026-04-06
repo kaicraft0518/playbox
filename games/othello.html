@@ -736,30 +736,38 @@ function pushOnlineState() {
 }
 
 function leaveRoom() {
+  // 1. Stop all listeners first
   if (onlineListener) { onlineListener(); onlineListener = null; }
   if (window._createRoomUnsub) { window._createRoomUnsub(); window._createRoomUnsub = null; }
-  if (onlineRoomId && window._fb) {
-    const {db,ref,remove,update} = window._fb;
-    // Write disconnect flag first so the other player is notified, then delete
-    update(ref(db, `othello_rooms/${onlineRoomId}`), { disconnected: true })
-      .then(() => remove(ref(db, `othello_rooms/${onlineRoomId}`)))
+
+  // 2. Notify opponent and delete room (snapshot roomId before clearing)
+  const roomIdToDelete = onlineRoomId;
+  if (roomIdToDelete && window._fb) {
+    const {db,ref,update,remove} = window._fb;
+    update(ref(db, `othello_rooms/${roomIdToDelete}`), { disconnected: true })
+      .then(() => remove(ref(db, `othello_rooms/${roomIdToDelete}`)))
       .catch(() => {});
   }
+
+  // 3. Clear online state
   onlineRoomId  = null;
   onlineMyColor = null;
-  // Clear gameMode BEFORE setMode to avoid recursive leaveRoom call
   const prevMode = gameMode;
   gameMode = 'cpu';
+
+  // 4. Update URL
   const url = new URL(location.href);
   url.searchParams.delete('room');
   history.replaceState({}, '', url);
-  if (prevMode === 'online') {
-    document.getElementById('onlineStatusBar').classList.remove('show');
-    document.querySelectorAll('#modeSeg .pb-seg-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
-    document.getElementById('cpuRow').style.display = '';
-    if (document.getElementById('colorRow')) document.getElementById('colorRow').style.display = '';
-    newGame();
-  }
+
+  // 5. Reset UI (always, regardless of prevMode)
+  document.getElementById('onlineStatusBar').classList.remove('show');
+  document.querySelectorAll('#modeSeg .pb-seg-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  document.getElementById('cpuRow').style.display = '';
+  if (document.getElementById('colorRow')) document.getElementById('colorRow').style.display = '';
+  document.getElementById('resultOverlay').classList.remove('show');
+  document.getElementById('disconnectOverlay').classList.remove('show');
+  newGame();
 }
 
 function copyUrl() {
